@@ -1,0 +1,2203 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f8f7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="西川巧真専用">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/png" sizes="192x192" href="app-icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="app-icon-512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="app-icon-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>西川巧真専用</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8f7;
+      --paper: #ffffff;
+      --paper-soft: #f0f5f3;
+      --ink: #111817;
+      --ink-soft: #41514d;
+      --muted: #667672;
+      --line: #dbe5e1;
+      --line-strong: #c8d6d1;
+      --teal: #007a72;
+      --teal-dark: #005f59;
+            --teal-soft: #dff4f0;
+      --teal-grad: #116f55;
+      --theme-rgb: 0, 122, 114;
+      --theme-soft-rgb: 223, 244, 240;
+      --coral: #d9514e;
+      --coral-dark: #b93c3a;
+      --coral-soft: #fde9e6;
+      --gold: #a97b00;
+      --gold-soft: #fff5d6;
+      --shadow-soft: 0 18px 50px rgba(18, 36, 32, 0.10);
+      --shadow-lift: 0 24px 70px rgba(18, 36, 32, 0.17);
+      --radius: 8px;
+      --tap: 48px;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      min-height: 100dvh;
+      margin: 0;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(230, 241, 238, 0.94) 46%, rgba(249, 244, 240, 0.86)),
+        var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "YuGothic", "Noto Sans JP", sans-serif;
+      line-height: 1.75;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    button {
+      min-height: var(--tap);
+      border: 0;
+      border-radius: var(--radius);
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .app {
+      width: min(100%, 720px);
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: max(14px, env(safe-area-inset-top)) 16px max(22px, env(safe-area-inset-bottom));
+    }
+
+    .view-frame {
+      min-height: calc(100dvh - max(14px, env(safe-area-inset-top)) - max(22px, env(safe-area-inset-bottom)));
+      animation: viewIn 360ms var(--ease) both;
+    }
+
+    .app-header {
+      display: grid;
+      grid-template-columns: 48px 1fr 48px;
+      align-items: center;
+      justify-items: center;
+      gap: 8px;
+      padding: 2px 0 18px;
+    }
+
+    .brand {
+      min-width: 0;
+      text-align: center;
+    }
+
+    .brand-kicker {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .brand-title {
+      margin: 0;
+      color: var(--ink);
+      font-size: 1.12rem;
+      font-weight: 900;
+      line-height: 1.35;
+    }
+
+    .header-side {
+      display: flex;
+      justify-content: center;
+    }
+
+    .icon-button {
+      width: 48px;
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      box-shadow: 0 10px 26px rgba(22, 40, 36, 0.08);
+      font-weight: 900;
+    }
+
+    .icon-button:active,
+    .primary-button:active,
+    .secondary-button:active,
+    .quiet-button:active,
+    .danger-button:active {
+      transform: translateY(1px);
+    }
+
+    .screen {
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      gap: 18px;
+      overflow: hidden;
+      padding: 22px 18px 20px;
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.90), rgba(238, 248, 245, 0.92) 56%, rgba(255, 236, 232, 0.62)),
+        var(--paper);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(var(--theme-rgb), 0.12), transparent 26%),
+        linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.48));
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 12px;
+    }
+
+    .hero-image {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: clamp(154px, 34vw, 214px);
+      object-fit: cover;
+      object-position: center 42%;
+      border-radius: var(--radius);
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      filter: saturate(0.96) contrast(1.02);
+    }
+
+    .hero-image.is-family-photo {
+      object-position: center 24%;
+    }
+
+    .switchable-image {
+      cursor: pointer;
+      transition: transform 160ms var(--ease), filter 160ms var(--ease), opacity 220ms var(--ease);
+      touch-action: manipulation;
+      will-change: opacity;
+    }
+
+    .switchable-image.is-swapping {
+      opacity: 0.14;
+    }
+
+    .switchable-image:active {
+      transform: scale(0.992);
+      filter: saturate(1.04) contrast(1.04) brightness(0.98);
+    }
+
+    .kicker {
+      margin: 0;
+      color: var(--teal-dark);
+      font-size: 0.78rem;
+      font-weight: 900;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .page-title {
+      margin: 0;
+      color: var(--ink);
+      font-size: 1.7rem;
+      font-weight: 950;
+      line-height: 1.28;
+      text-align: center;
+      text-wrap: balance;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.98rem;
+      line-height: 1.85;
+      text-align: center;
+      overflow-wrap: anywhere;
+      word-break: normal;
+      line-break: strict;
+    }
+
+    .favorite-quote {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      color: var(--coral-dark);
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Klee", "Hiragino Sans", serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.45;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .section {
+      display: grid;
+      gap: 12px;
+    }
+
+    .section-title {
+      margin: 0;
+      color: var(--ink);
+      font-size: 1.16rem;
+      font-weight: 900;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .section-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      word-break: normal;
+      line-break: strict;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .primary-button,
+    .secondary-button,
+    .quiet-button,
+    .danger-button {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 16px;
+      text-align: center;
+      font-weight: 900;
+      transition: transform 160ms var(--ease), box-shadow 160ms var(--ease), background-color 160ms var(--ease);
+    }
+
+    .primary-button {
+      background: linear-gradient(135deg, var(--teal), var(--teal-grad));
+      color: #ffffff;
+      box-shadow: 0 14px 28px rgba(var(--theme-rgb), 0.24);
+    }
+
+    .primary-button:hover {
+      box-shadow: 0 16px 36px rgba(var(--theme-rgb), 0.30);
+    }
+
+    .secondary-button {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+    }
+
+    .quiet-button {
+      background: transparent;
+      color: var(--teal-dark);
+    }
+
+    .danger-button {
+      border: 1px solid #efc7c1;
+      background: #fff0ee;
+      color: var(--coral-dark);
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .lock-layout {
+      min-height: calc(100dvh - 36px);
+      display: grid;
+      align-content: center;
+      gap: 18px;
+    }
+
+    .lock-panel {
+      display: grid;
+      gap: 16px;
+      padding: 20px 18px;
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.84);
+      box-shadow: var(--shadow-lift);
+    }
+
+    .lock-visual {
+      width: min(100%, 330px);
+      height: 196px;
+      margin: 0 auto;
+      object-fit: cover;
+      object-position: center 42%;
+      border-radius: var(--radius);
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .lock-visual.is-family-photo {
+      object-position: center 24%;
+    }
+
+    .form-field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .form-field label {
+      color: var(--ink);
+      font-weight: 900;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .form-field input,
+    .form-field textarea {
+      width: 100%;
+      min-height: var(--tap);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+      padding: 12px 13px;
+      outline: none;
+    }
+
+    .form-field textarea {
+      min-height: 210px;
+      resize: vertical;
+      line-height: 1.75;
+    }
+
+    .form-field input:focus,
+    .form-field textarea:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(var(--theme-rgb), 0.14);
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.65;
+    }
+
+    .auth-stage {
+      width: fit-content;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 7px 12px;
+      border: 1px solid rgba(var(--theme-rgb), 0.16);
+      border-radius: 999px;
+      background: rgba(var(--theme-soft-rgb), 0.72);
+      color: var(--teal-dark);
+      font-size: 0.8rem;
+      font-weight: 900;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .auth-steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .auth-step {
+      min-height: 54px;
+      display: grid;
+      place-items: center;
+      padding: 8px;
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.66);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 900;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .auth-step.is-active {
+      border-color: rgba(var(--theme-rgb), 0.22);
+      background: rgba(var(--theme-soft-rgb), 0.88);
+      color: var(--teal-dark);
+      box-shadow: 0 12px 28px rgba(var(--theme-rgb), 0.10);
+    }
+
+    .auth-step.is-done {
+      border-color: rgba(169, 123, 0, 0.24);
+      background: rgba(255, 245, 214, 0.86);
+      color: #735200;
+    }
+
+    .history-item strong {
+      color: var(--ink);
+      font-size: 0.98rem;
+      line-height: 1.5;
+    }
+
+    .history-item span {
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.65;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .choice-card,
+    .history-item,
+    .summary-item {
+      width: 100%;
+      display: grid;
+      gap: 5px;
+      padding: 14px;
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      text-align: left;
+      box-shadow: 0 10px 28px rgba(22, 40, 36, 0.07);
+    }
+
+    .choice-card {
+      min-height: 116px;
+      align-content: center;
+    }
+
+    .choice-card strong,
+    .summary-item strong {
+      display: block;
+      font-size: 1.02rem;
+      line-height: 1.45;
+    }
+
+    .choice-card span,
+    .summary-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.68;
+    }
+
+    .deck-shell {
+      min-height: calc(100dvh - 116px);
+      display: grid;
+      align-content: center;
+      gap: 18px;
+    }
+
+    .progress-rail {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(17, 24, 23, 0.08);
+    }
+
+    .progress-bar {
+      width: var(--progress);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--teal), var(--coral));
+      transition: width 280ms var(--ease);
+    }
+
+    .deck-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .deck-card {
+      display: grid;
+      gap: 18px;
+      min-height: 360px;
+      align-content: center;
+      padding: 24px 18px;
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(236, 247, 244, 0.94) 64%, rgba(255, 235, 231, 0.72)),
+        var(--paper);
+      box-shadow: var(--shadow-lift);
+      animation: cardIn 330ms var(--ease) both;
+    }
+
+    .deck-card.is-exiting {
+      animation: cardOut 170ms ease both;
+    }
+
+    .card-type {
+      width: fit-content;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 7px 12px;
+      border: 1px solid rgba(var(--theme-rgb), 0.18);
+      border-radius: 999px;
+      background: rgba(var(--theme-soft-rgb), 0.82);
+      color: var(--teal-dark);
+      font-size: 0.82rem;
+      font-weight: 900;
+      line-height: 1.4;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    .card-text {
+      margin: 0;
+      color: var(--ink);
+      font-size: 1.12rem;
+      font-weight: 950;
+      line-height: 1.78;
+      text-align: center;
+      overflow-wrap: break-word;
+      word-break: auto;
+      line-break: auto;
+    }
+
+    .card-note {
+      margin: 0;
+      color: var(--coral-dark);
+      font-size: 0.92rem;
+      font-weight: 800;
+      line-height: 1.75;
+      text-align: center;
+      overflow-wrap: break-word;
+      word-break: auto;
+      line-break: auto;
+    }
+
+    .card-prompt {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.94rem;
+      line-height: 1.8;
+      text-align: center;
+    }
+
+    .completion-mark {
+      width: 74px;
+      height: 74px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), var(--coral));
+      color: #ffffff;
+      box-shadow: 0 18px 38px rgba(var(--theme-rgb), 0.22);
+      font-size: 1.8rem;
+      font-weight: 950;
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .stamp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 12px;
+      align-items: start;
+      max-height: 360px;
+      overflow-y: auto;
+      padding: 2px 2px 8px;
+      scrollbar-width: thin;
+    }
+
+    .stamp {
+      width: 88px;
+      aspect-ratio: 1;
+      display: inline-grid;
+      place-items: center;
+      justify-self: center;
+      border-radius: 50%;
+      border: 1px solid rgba(17, 24, 23, 0.10);
+      background: #e3e7e5;
+      color: #5f6966;
+      box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.38), 0 12px 28px rgba(22, 40, 36, 0.09);
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .stamp-inner {
+      display: grid;
+      width: 100%;
+      height: 100%;
+      padding: 9px 7px;
+      justify-items: center;
+      align-content: center;
+    }
+
+    .stamp-inner.is-regular {
+      row-gap: 4px;
+    }
+
+    .stamp-inner.is-warning {
+      grid-template-rows: auto auto auto auto auto;
+      row-gap: 2px;
+      padding-block: 8px 7px;
+    }
+
+    .stamp.is-current {
+      background: linear-gradient(145deg, #fff4b8, #e5b72d);
+      color: #4d3900;
+      box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.34), 0 14px 30px rgba(169, 123, 0, 0.20);
+    }
+
+    .stamp.is-warning {
+      border-color: rgba(185, 60, 58, 0.36);
+      background: linear-gradient(145deg, #ffebe8, #d9514e);
+      color: #ffffff;
+      box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.18), 0 14px 30px rgba(185, 60, 58, 0.24);
+    }
+
+    .stamp.is-blood {
+      border-color: rgba(139, 0, 0, 0.45);
+      background: linear-gradient(145deg, #a30000, #5d0000);
+      color: #ffffff;
+      box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.15), 0 14px 30px rgba(139, 0, 0, 0.35);
+    }
+
+    .stamp.is-purple {
+      border-color: rgba(111, 74, 166, 0.38);
+      background: linear-gradient(145deg, #efe6ff, #7652b7);
+      color: #ffffff;
+      box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.18), 0 14px 30px rgba(111, 74, 166, 0.24);
+    }
+
+    .stamp-year,
+    .stamp-date,
+    .stamp-time,
+    .stamp-mark,
+    .stamp-label {
+      display: block;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .stamp-year {
+      font-size: 0.58rem;
+      line-height: 1.05;
+    }
+
+    .stamp-date {
+      font-size: 0.78rem;
+      line-height: 1.05;
+    }
+
+    .stamp-time {
+      font-size: 0.7rem;
+      line-height: 1.05;
+    }
+
+    .stamp-mark {
+      font-size: 1.08rem;
+      line-height: 1;
+    }
+
+    .stamp-label {
+      font-size: 0.64rem;
+      line-height: 1.1;
+    }
+
+    .stamp-label-line {
+      min-height: 0.82rem;
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .stamp-label-line .stamp-label {
+      display: inline;
+    }
+
+    .stamp-label-meta {
+      display: inline;
+      font-size: 0.48rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .stamp-sub-label {
+      min-width: 2.8rem;
+      min-height: 0.86rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+      padding: 1px 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.86);
+      font-size: 0.56rem;
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .stamp-sub-label.is-red {
+      color: #f00018;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+    }
+
+    .stamp-sub-label.is-pulse {
+      animation: dangerPulse 1.2s infinite var(--ease);
+      box-shadow: 0 0 12px rgba(240, 0, 24, 0.4);
+    }
+
+    @keyframes dangerPulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.06); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .stamp-sub-label.is-placeholder {
+      background: transparent;
+      color: transparent;
+      text-shadow: none;
+    }
+
+    .summary-item {
+      grid-template-columns: 34px 1fr;
+      align-items: start;
+    }
+
+    .summary-number {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: var(--teal-soft);
+      color: var(--teal-dark);
+      font-size: 0.8rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .summary-note {
+      color: var(--coral-dark);
+      font-weight: 800;
+    }
+
+    .empty-state {
+      padding: 16px;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.54);
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.75;
+    }
+
+    .settings-panel {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.74);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .calendar-shell {
+      display: grid;
+      gap: 12px;
+      min-height: calc(100dvh - 112px);
+    }
+
+    .calendar-frame {
+      width: 100%;
+      min-height: calc(100dvh - 188px);
+      border: 1px solid rgba(17, 24, 23, 0.10);
+      border-radius: var(--radius);
+      background: #ffffff;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .modal-root {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(17, 24, 23, 0.46);
+    }
+
+    .modal-root.is-open {
+      display: flex;
+      animation: fadeIn 180ms ease both;
+    }
+
+    .fx-root {
+      position: fixed;
+      inset: 0;
+      z-index: 25;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .tap-burst {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+      transform: translate(var(--x), var(--y));
+    }
+
+    .tap-ring,
+    .tap-core,
+    .tap-dot {
+      position: absolute;
+      left: 0;
+      top: 0;
+      pointer-events: none;
+    }
+
+    .tap-ring {
+      width: 18px;
+      height: 18px;
+      margin-left: -9px;
+      margin-top: -9px;
+      border: 2px solid rgba(255, 244, 184, 0.92);
+      border-radius: 50%;
+      box-shadow: 0 0 18px rgba(255, 215, 120, 0.28);
+      animation: tapRing 460ms ease-out forwards;
+    }
+
+    .tap-core {
+      width: 8px;
+      height: 8px;
+      margin-left: -4px;
+      margin-top: -4px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(255, 225, 145, 0.9));
+      animation: tapCore 380ms ease-out forwards;
+    }
+
+    .tap-dot {
+      width: 6px;
+      height: 6px;
+      margin-left: -3px;
+      margin-top: -3px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.96), rgba(217, 81, 78, 0.88));
+      animation: tapDot 520ms var(--ease) forwards;
+      animation-delay: var(--delay, 0ms);
+      transform: translate(0, 0) scale(1);
+    }
+
+    .modal {
+      width: min(100%, 430px);
+      display: grid;
+      gap: 13px;
+      padding: 18px;
+      border-radius: var(--radius);
+      background: #ffffff;
+      box-shadow: 0 22px 76px rgba(0, 0, 0, 0.24);
+      animation: modalIn 220ms var(--ease) both;
+    }
+
+    .modal h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 1.12rem;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .modal p {
+      margin: 0;
+      color: var(--ink-soft);
+      line-height: 1.8;
+      text-align: center;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (min-width: 620px) {
+      .app {
+        padding-inline: 22px;
+      }
+
+      .hero {
+        grid-template-columns: minmax(0, 1.08fr) minmax(210px, 0.92fr);
+        align-items: center;
+        padding: 24px;
+      }
+
+      .hero-image {
+        height: 210px;
+      }
+
+      .quick-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .card-text {
+        font-size: 1.22rem;
+      }
+    }
+
+    @keyframes viewIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateX(18px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+
+    @keyframes cardOut {
+      from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(-16px) scale(0.985);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes tapRing {
+      from {
+        opacity: 0.9;
+        transform: scale(0.3);
+      }
+      to {
+        opacity: 0;
+        transform: scale(3.2);
+      }
+    }
+
+    @keyframes tapCore {
+      from {
+        opacity: 0.95;
+        transform: scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: scale(2.6);
+      }
+    }
+
+    @keyframes tapDot {
+      from {
+        opacity: 0.95;
+        transform: translate(0, 0) scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: translate(var(--dx), var(--dy)) scale(0.3);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 1ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app" aria-live="polite"></div>
+  <div id="modalRoot" class="modal-root" role="presentation"></div>
+  <div id="fxRoot" class="fx-root" aria-hidden="true"></div>
+  <audio id="bgm" src="bgm.mp3" autoplay loop preload="auto"></audio>
+
+    <script>
+    const THEMES = [
+      { main: "#007a72", dark: "#005f59", soft: "#dff4f0", grad: "#116f55", rgb: "0, 122, 114", softRgb: "223, 244, 240" },
+      { main: "#d32f2f", dark: "#9a0007", soft: "#ffebee", grad: "#b71c1c", rgb: "211, 47, 47", softRgb: "255, 235, 238" },
+      { main: "#1976d2", dark: "#004ba0", soft: "#e3f2fd", grad: "#0d47a1", rgb: "25, 118, 210", softRgb: "227, 242, 253" },
+      { main: "#f57c00", dark: "#e65100", soft: "#fff3e0", grad: "#ef6c00", rgb: "245, 124, 0", softRgb: "255, 243, 224" },
+      { main: "#7b1fa2", dark: "#4a0072", soft: "#f3e5f5", grad: "#6a1b9a", rgb: "123, 31, 162", softRgb: "243, 229, 245" },
+      { main: "#c2185b", dark: "#8c0032", soft: "#fce4ec", grad: "#ad1457", rgb: "194, 24, 91", softRgb: "252, 228, 236" }
+    ];
+    const applyRandomTheme = function() {
+      const theme = THEMES[Math.floor(Math.random() * THEMES.length)];
+      const root = document.documentElement;
+      root.style.setProperty('--teal', theme.main);
+      root.style.setProperty('--teal-dark', theme.dark);
+      root.style.setProperty('--teal-soft', theme.soft);
+      root.style.setProperty('--teal-grad', theme.grad);
+      root.style.setProperty('--theme-rgb', theme.rgb);
+      root.style.setProperty('--theme-soft-rgb', theme.softRgb);
+    };
+    applyRandomTheme();
+    const initBgm = function() {
+      const bgm = document.getElementById('bgm');
+      if (!bgm) return;
+      
+      const targetVolume = 0.5;
+      bgm.volume = 0;
+
+      const fadeIn = () => {
+        let currentVol = 0;
+        const interval = setInterval(() => {
+          currentVol += 0.05;
+          if (currentVol >= targetVolume) {
+            bgm.volume = targetVolume;
+            clearInterval(interval);
+          } else {
+            bgm.volume = Math.min(targetVolume, currentVol);
+          }
+        }, 120);
+      };
+
+      const attemptPlay = () => {
+        if (!bgm.paused) return;
+        bgm.play().then(() => {
+          fadeIn();
+          window.removeEventListener('pointerdown', attemptPlay);
+          window.removeEventListener('touchstart', attemptPlay);
+          window.removeEventListener('keydown', attemptPlay);
+          window.removeEventListener('focus', attemptPlay);
+        }).catch(() => {});
+      };
+
+      attemptPlay();
+      window.addEventListener('pointerdown', attemptPlay, { once: true });
+      window.addEventListener('touchstart', attemptPlay, { once: true });
+      window.addEventListener('keydown', attemptPlay, { once: true });
+      window.addEventListener('focus', attemptPlay);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') attemptPlay();
+      });
+    };
+    document.addEventListener('DOMContentLoaded', initBgm);
+    // 初期実行
+    initBgm();
+
+    // サービスワーカーを登録してBGMをキャッシュする
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').catch(function(){});
+      });
+    }
+
+    const AUTH_SEQUENCE = ["0418", "0429", "0415"];
+    const CALENDAR_URL = "https://tatsuko0429.github.io/yome-senyo-tool/";
+
+    const STORAGE_KEYS = {
+      authenticated: "personal_mindset_authenticated_v3",
+      cards: "personal_mindset_cards_v5",
+      history: "personal_mindset_history_v2",
+      imageIndex: "personal_mindset_image_index_v1"
+    };
+
+    const LEGACY_KEYS = {
+      history: "personal_mindfulness_history_v1"
+    };
+
+    const defaultCards = [
+      {
+        type: "2026年4月18日の夜",
+        text: "10万円を無駄にした自分の愚かな行動を、なかったことにするな。\n物欲を放棄しろ、自分に金を使うな。",
+        note: "他の罪も同じだ。これ以上、重ねるな。"
+      },
+      {
+        type: "聞く姿勢",
+        text: "耳も頭も悪い、認めろ、人の話に意識を向けて、ちゃんと聞いて、メモしろ、脳死になるな。",
+        note: "特に妻には集中して、先回りして、助けろ。"
+      },
+      {
+        type: "妻への姿勢",
+        text: "嫁に反抗するな、他者に強気になるな、その資格はない、妻をたてて、妻のために生きろ。他者の役にたて。親の恥になるな。",
+        note: "いらないプライドを持つな。"
+      },
+      {
+        type: "陽葵への姿勢",
+        text: "陽葵に怒るな、願いは聞け、拒否する身分じゃない、常に笑顔で生きろ。",
+        note: "口角と優しい声をキープしろ。"
+      },
+      {
+        type: "家族と仕事",
+        text: "仕事を必死に頑張れ、家族のために動け、これ以上親は傷つけるな、自分なんて二の次にしろ。",
+        note: "自慰行為も二度とするな、お前は病気だ。"
+      }
+    ];
+
+    const favoriteQuotes = [
+      "正すべきものから、目を逸らさない。"
+    ];
+
+    const specialStamps = [
+      {
+        id: "warning-2026-04-18",
+        dateKey: "2026-04-18",
+        label: "戒め",
+        mark: "×",
+        tone: "purple",
+        title: "2026年4月18日。ここをなかったことにしない。"
+      },
+      {
+        id: "warning-2026-04-22",
+        dateKey: "2026-04-22",
+        label: "自慰",
+        mark: "×",
+        tone: "warning",
+        title: "2026年4月22日。ここから本気で正す。"
+      },
+      {
+        id: "warning-2026-04-23",
+        dateKey: "2026-04-23",
+        label: "自慰",
+        metaLabel: "2回",
+        mark: "×",
+        tone: "warning",
+        title: "2026年4月23日。"
+      },
+      {
+        id: "warning-2026-04-26",
+        dateKey: "2026-04-26",
+        label: "自慰",
+        metaLabel: "2回",
+        subLabel: "次はない",
+        subTone: "red",
+        mark: "×",
+        tone: "warning",
+        title: "2026年4月26日。ここから本気で正す。"
+      },
+      {
+        id: "warning-2026-04-27",
+        dateKey: "2026-04-27",
+        label: "自慰",
+        subLabel: "次 死刑",
+        subTone: "red",
+        mark: "×",
+        tone: "blood",
+        title: "2026年4月27日。断固として正す。"
+      }
+    ];
+
+    const focusImages = [
+      "mindset-photo.jpeg",
+      "mindset-photo-alt.jpeg"
+    ];
+
+    const app = document.querySelector("#app");
+    const modalRoot = document.querySelector("#modalRoot");
+    const fxRoot = document.querySelector("#fxRoot");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let audioContext = null;
+
+    const state = {
+      authenticated: getInitialAuth(),
+      view: "home",
+      activeIndex: 0,
+      confirmedCards: [],
+      transitioning: false,
+      imageTransitioning: false,
+      favoriteQuote: chooseFavoriteQuote(),
+      unlockStep: 0,
+      imageIndex: getInitialImageIndex()
+    };
+
+    function getInitialAuth() {
+      return localStorage.getItem(STORAGE_KEYS.authenticated) === "true";
+    }
+
+    function getInitialImageIndex() {
+      const saved = Number(localStorage.getItem(STORAGE_KEYS.imageIndex));
+      if (Number.isInteger(saved) && saved >= 0 && saved < focusImages.length) {
+        return saved;
+      }
+      return 0;
+    }
+
+    function getFocusImage() {
+      return focusImages[state.imageIndex] || focusImages[0];
+    }
+
+    function getFocusImageClass() {
+      return state.imageIndex === 1 ? " is-family-photo" : "";
+    }
+
+    function getSwitchableImages() {
+      if (typeof document.querySelectorAll !== "function") return [];
+      return [...document.querySelectorAll(".switchable-image")];
+    }
+
+    function syncRenderedFocusImages() {
+      const source = getFocusImage();
+      const isFamilyPhoto = state.imageIndex === 1;
+      getSwitchableImages().forEach((image) => {
+        if (!image) return;
+        image.src = source;
+        if (image.classList && typeof image.classList.toggle === "function") {
+          image.classList.toggle("is-family-photo", isFamilyPhoto);
+        }
+      });
+    }
+
+    async function toggleFocusImage() {
+      if (state.imageTransitioning) return;
+
+      const images = getSwitchableImages();
+      const nextIndex = (state.imageIndex + 1) % focusImages.length;
+      state.imageTransitioning = true;
+
+      if (!reduceMotion && images.length > 0) {
+        images.forEach((image) => {
+          if (image.classList && typeof image.classList.add === "function") {
+            image.classList.add("is-swapping");
+          }
+        });
+        await wait(170);
+      }
+
+      state.imageIndex = nextIndex;
+      localStorage.setItem(STORAGE_KEYS.imageIndex, String(state.imageIndex));
+      syncRenderedFocusImages();
+
+      if (!reduceMotion && images.length > 0) {
+        images.forEach((image) => {
+          void image.offsetWidth;
+          if (image.classList && typeof image.classList.remove === "function") {
+            image.classList.remove("is-swapping");
+          }
+        });
+        await wait(220);
+      }
+
+      state.imageTransitioning = false;
+    }
+
+    function loadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        console.warn("保存データを読み込めませんでした。", error);
+        return fallback;
+      }
+    }
+
+    function saveJSON(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      } catch (error) {
+        showModal("保存できませんでした", "ブラウザの保存領域を確認してください。表示は続けられます。");
+        return false;
+      }
+    }
+
+    function migrateHistory() {
+      const current = loadJSON(STORAGE_KEYS.history, null);
+      if (Array.isArray(current)) return current;
+
+      const legacy = loadJSON(LEGACY_KEYS.history, []);
+      if (!Array.isArray(legacy) || legacy.length === 0) {
+        saveJSON(STORAGE_KEYS.history, []);
+        return [];
+      }
+
+      const converted = legacy.slice(0, 20).map((item) => ({
+        id: item.id || `${Date.now()}-${Math.random()}`,
+        mode: "以前の記録",
+        count: 0,
+        completedAt: item.completedAt || new Date().toISOString(),
+        dateKey: dateKeyFromISO(item.completedAt || new Date().toISOString()),
+        cards: []
+      }));
+      saveJSON(STORAGE_KEYS.history, converted);
+      return converted;
+    }
+
+    function normalizeCards(cards) {
+      if (!Array.isArray(cards)) return defaultCards;
+      const normalized = cards
+        .filter((item) => item && typeof item.text === "string" && item.text.trim())
+        .map((item, index) => ({
+          type: typeof item.type === "string" && item.type.trim() ? item.type.trim() : defaultCards[index]?.type || "確認",
+          text: item.text.trim(),
+          note: typeof item.note === "string" ? item.note.trim() : ""
+        }));
+      return normalized.length > 0 ? normalized : defaultCards;
+    }
+
+    function getCards() {
+      const saved = loadJSON(STORAGE_KEYS.cards, null);
+      if (Array.isArray(saved)) return normalizeCards(saved);
+      saveJSON(STORAGE_KEYS.cards, defaultCards);
+      return defaultCards;
+    }
+
+    function chooseFavoriteQuote() {
+      const quotes = favoriteQuotes.filter((quote) => typeof quote === "string" && quote.trim());
+      if (quotes.length === 0) return "";
+      const index = Math.floor(Math.random() * quotes.length);
+      return quotes[index].trim();
+    }
+
+    function getUnlockStageLabel() {
+      return `第${state.unlockStep + 1}段階 / ${AUTH_SEQUENCE.length}`;
+    }
+
+    function getUnlockStageHint() {
+      const hints = [
+        "1つ目の番号を入力してください。",
+        "2つ目の番号を順番どおりに入力してください。",
+        "最後の番号を入力すると開きます。"
+      ];
+      return hints[state.unlockStep] || hints[0];
+    }
+
+    function getUnlockButtonLabel() {
+      return state.unlockStep + 1 >= AUTH_SEQUENCE.length ? "開く" : "次へ";
+    }
+
+    function resetUnlockProgress() {
+      state.unlockStep = 0;
+    }
+
+    function getAudioContext() {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return null;
+      if (!audioContext) {
+        audioContext = new AudioCtor();
+      }
+      if (audioContext.state === "suspended") {
+        audioContext.resume().catch(() => {});
+      }
+      return audioContext;
+    }
+
+    function playTapSound() {
+      const context = getAudioContext();
+      if (!context) return;
+
+      const now = context.currentTime;
+      const carrier = context.createOscillator();
+      const accent = context.createOscillator();
+      const gain = context.createGain();
+
+      carrier.type = "triangle";
+      accent.type = "sine";
+      carrier.frequency.setValueAtTime(760, now);
+      carrier.frequency.exponentialRampToValueAtTime(430, now + 0.08);
+      accent.frequency.setValueAtTime(1180, now);
+      accent.frequency.exponentialRampToValueAtTime(690, now + 0.06);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.028, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.095);
+
+      carrier.connect(gain);
+      accent.connect(gain);
+      gain.connect(context.destination);
+
+      carrier.start(now);
+      accent.start(now);
+      carrier.stop(now + 0.1);
+      accent.stop(now + 0.08);
+    }
+
+    function triggerHapticFeedback() {
+      if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") {
+        return false;
+      }
+
+      try {
+        return navigator.vibrate(12);
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function createTapBurst(x, y) {
+      if (!fxRoot || typeof document.createElement !== "function") return;
+
+      const burst = document.createElement("div");
+      burst.className = "tap-burst";
+      burst.style.setProperty("--x", `${x}px`);
+      burst.style.setProperty("--y", `${y}px`);
+
+      const ring = document.createElement("span");
+      ring.className = "tap-ring";
+      burst.appendChild(ring);
+
+      const core = document.createElement("span");
+      core.className = "tap-core";
+      burst.appendChild(core);
+
+      const vectors = [
+        { x: 24, y: -18, delay: 0 },
+        { x: -26, y: -14, delay: 24 },
+        { x: 18, y: 22, delay: 18 },
+        { x: -20, y: 24, delay: 40 },
+        { x: 0, y: -30, delay: 12 }
+      ];
+
+      vectors.forEach((vector) => {
+        const dot = document.createElement("span");
+        dot.className = "tap-dot";
+        dot.style.setProperty("--dx", `${vector.x}px`);
+        dot.style.setProperty("--dy", `${vector.y}px`);
+        dot.style.setProperty("--delay", `${vector.delay}ms`);
+        burst.appendChild(dot);
+      });
+
+      if (typeof fxRoot.appendChild === "function") {
+        fxRoot.appendChild(burst);
+        window.setTimeout(() => {
+          if (typeof burst.remove === "function") burst.remove();
+        }, 560);
+      }
+    }
+
+    function handlePointerFeedback(event) {
+      if (!event || event.button > 0) return;
+      if (typeof event.clientX === "number" && typeof event.clientY === "number") {
+        createTapBurst(event.clientX, event.clientY);
+      }
+      const target = event.target;
+      if (target && typeof target.closest === "function" && target.closest("button")) {
+        triggerHapticFeedback();
+        playTapSound();
+      }
+    }
+
+    function getDeck() {
+      return getCards();
+    }
+
+    function getHistory() {
+      return migrateHistory();
+    }
+
+    function getRecordDateKey(record) {
+      return record.dateKey || dateKeyFromISO(record.completedAt);
+    }
+
+    function getDailyHistory() {
+      const dailyRecords = new Map();
+      getHistory().forEach((record) => {
+        if (!record || !record.completedAt) return;
+        const key = getRecordDateKey(record);
+        const current = dailyRecords.get(key);
+        const recordTime = new Date(record.completedAt).getTime();
+        const currentTime = current ? new Date(current.completedAt).getTime() : Infinity;
+        if (!current || recordTime < currentTime) {
+          dailyRecords.set(key, record);
+        }
+      });
+
+      return [...dailyRecords.values()].sort((a, b) => {
+        const keyDiff = getRecordDateKey(b).localeCompare(getRecordDateKey(a));
+        if (keyDiff !== 0) return keyDiff;
+        return new Date(a.completedAt) - new Date(b.completedAt);
+      });
+    }
+
+    function getSpecialStampKeys() {
+      return new Set(specialStamps.map((stamp) => stamp.dateKey));
+    }
+
+    function getVisibleStampHistory() {
+      const specialKeys = getSpecialStampKeys();
+      const regularItems = getDailyHistory()
+        .filter((item) => !specialKeys.has(getRecordDateKey(item)))
+        .map((item) => ({
+          kind: "regular",
+          dateKey: getRecordDateKey(item),
+          completedAt: item.completedAt,
+          title: formatDate(item.completedAt)
+        }));
+
+      const warningItems = specialStamps.map((stamp) => ({
+        kind: "warning",
+        dateKey: stamp.dateKey,
+        mark: stamp.mark,
+        label: stamp.label,
+        metaLabel: stamp.metaLabel || "",
+        subLabel: stamp.subLabel || "",
+        subTone: stamp.subTone || "",
+        tone: stamp.tone || "warning",
+        title: stamp.title
+      }));
+
+      return [...regularItems, ...warningItems].sort((a, b) => {
+        const keyDiff = b.dateKey.localeCompare(a.dateKey);
+        if (keyDiff !== 0) return keyDiff;
+        if (a.kind !== b.kind) return a.kind === "warning" ? -1 : 1;
+        return 0;
+      });
+    }
+
+    function hasCompletedMindsetToday() {
+      const key = todayKey();
+      const specialKeys = getSpecialStampKeys();
+      return getDailyHistory().some((item) => {
+        return getRecordDateKey(item) === key && !specialKeys.has(key);
+      });
+    }
+
+    function addHistory(cards) {
+      const history = getHistory();
+      const key = todayKey();
+      const alreadyRecorded = history.some((item) => getRecordDateKey(item) === key);
+      if (alreadyRecorded) return;
+
+      history.unshift({
+        id: `${Date.now()}-mindset`,
+        mode: "マインドセット",
+        count: cards.length,
+        completedAt: new Date().toISOString(),
+        dateKey: key,
+        cards: cards.map((card) => ({ type: card.type, text: card.text, note: card.note || "" }))
+      });
+      saveJSON(STORAGE_KEYS.history, history.slice(0, 180));
+    }
+
+    function escapeHTML(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatMultilineText(value) {
+      return escapeHTML(value).replaceAll("\n", "<br>");
+    }
+
+    function formatDate(isoString, style = "short") {
+      const date = new Date(isoString);
+      if (Number.isNaN(date.getTime())) return "日時不明";
+      const options = style === "date"
+        ? { month: "long", day: "numeric", weekday: "short" }
+        : { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" };
+      return new Intl.DateTimeFormat("ja-JP", options).format(date);
+    }
+
+    function todayKey() {
+      const now = new Date();
+      return makeDateKey(now);
+    }
+
+    function dateKeyFromISO(isoString) {
+      const date = new Date(isoString);
+      if (Number.isNaN(date.getTime())) return todayKey();
+      return makeDateKey(date);
+    }
+
+    function makeDateKey(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function dateKeyToDate(key) {
+      const [year, month, day] = key.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    function addDaysToKey(key, amount) {
+      const date = dateKeyToDate(key);
+      date.setDate(date.getDate() + amount);
+      return makeDateKey(date);
+    }
+
+    function daysBetweenKeys(fromKey, toKey) {
+      const from = dateKeyToDate(fromKey);
+      const to = dateKeyToDate(toKey);
+      return Math.round((to - from) / 86400000);
+    }
+
+    function getCurrentStreakKeys(history) {
+      const uniqueKeys = [...new Set(history.map(getRecordDateKey))]
+        .filter(Boolean)
+        .sort()
+        .reverse();
+
+      if (uniqueKeys.length === 0) return new Set();
+
+      const firstKey = uniqueKeys[0];
+      const gapFromToday = daysBetweenKeys(firstKey, todayKey());
+      if (gapFromToday > 1) return new Set();
+
+      const streak = new Set([firstKey]);
+      let expected = firstKey;
+      for (let index = 1; index < uniqueKeys.length; index += 1) {
+        expected = addDaysToKey(expected, -1);
+        if (uniqueKeys[index] !== expected) break;
+        streak.add(uniqueKeys[index]);
+      }
+      return streak;
+    }
+
+    function formatStampYear(date) {
+      const year = date.getFullYear();
+      if (year >= 2019) return `令和${year - 2018}年`;
+      return `${year}年`;
+    }
+
+    function getStampDateParts(date) {
+      if (Number.isNaN(date.getTime())) {
+        return { year: "年不明", date: "--/--" };
+      }
+
+      return {
+        year: formatStampYear(date),
+        date: new Intl.DateTimeFormat("ja-JP", {
+          month: "numeric",
+          day: "numeric"
+        }).format(date)
+      };
+    }
+
+    function formatStampDate(isoString) {
+      const date = new Date(isoString);
+      return getStampDateParts(date);
+    }
+
+    function formatStampDateKey(dateKey) {
+      const date = dateKeyToDate(dateKey);
+      return getStampDateParts(date);
+    }
+
+    function formatStampTime(isoString) {
+      const date = new Date(isoString);
+      if (Number.isNaN(date.getTime())) return "--:--";
+      return new Intl.DateTimeFormat("ja-JP", {
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(date);
+    }
+
+    function renderStampHistory() {
+      const history = getVisibleStampHistory();
+      if (history.length === 0) {
+        return `<div class="empty-state">記録はまだありません。</div>`;
+      }
+
+      const streakKeys = getCurrentStreakKeys(getDailyHistory().filter((item) => !getSpecialStampKeys().has(getRecordDateKey(item))));
+      return `
+        <div class="stamp-grid" aria-label="記録スタンプ">
+          ${history.map((item) => {
+            const isWarning = item.kind === "warning";
+            const isCurrent = !isWarning && streakKeys.has(item.dateKey);
+            const toneClass = isWarning ? ` is-${item.tone || "warning"}` : "";
+            const dateParts = isWarning ? formatStampDateKey(item.dateKey) : formatStampDate(item.completedAt);
+            const subLabelClass = item.subLabel
+              ? `${item.subTone ? ` is-${escapeHTML(item.subTone)}` : ""}${item.subLabel === "次 死刑" ? " is-pulse" : ""}`
+              : " is-placeholder";
+            return `
+              <div class="stamp${isCurrent ? " is-current" : ""}${toneClass}" title="${escapeHTML(item.title)}">
+                <span class="stamp-inner ${isWarning ? "is-warning" : "is-regular"}">
+                  <span class="stamp-year">${escapeHTML(dateParts.year)}</span>
+                  <span class="stamp-date">${escapeHTML(dateParts.date)}</span>
+                  ${isWarning
+                    ? `<span class="stamp-mark">${escapeHTML(item.mark)}</span><span class="stamp-label-line"><span class="stamp-label">${escapeHTML(item.label)}</span>${item.metaLabel ? `<span class="stamp-label-meta">${escapeHTML(item.metaLabel)}</span>` : ""}</span><span class="stamp-sub-label${subLabelClass}"${item.subLabel ? "" : ' aria-hidden="true"'}>${escapeHTML(item.subLabel || "")}</span>`
+                    : `<span class="stamp-time">${escapeHTML(formatStampTime(item.completedAt))}</span>`}
+                </span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function wait(ms) {
+      if (reduceMotion) return Promise.resolve();
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function backupData() {
+      const history = getHistory();
+      if (history.length === 0) {
+        showModal("記録なし", "保存されているスタンプの履歴がありません。");
+        return;
+      }
+
+      let logText = "【マインドセット実施記録】\n";
+      logText += "--------------------------\n";
+
+      // 履歴を日付順（古い順）にして整形
+      [...history].reverse().forEach(item => {
+        const date = new Date(item.completedAt);
+        const dateStr = new Intl.DateTimeFormat("ja-JP", {
+          year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", weekday: "short"
+        }).format(date);
+        logText += `${dateStr} - ${item.mode || "完了"}\n`;
+      });
+
+      logText += "--------------------------\n";
+      logText += `出力日: ${new Date().toLocaleString("ja-JP")}`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(logText).then(() => {
+          showModal("コピー完了", "スタンプの履歴をテキスト形式でコピーしました。メモ帳などに貼り付けて保存してください。");
+        }).catch(() => {
+          showModal("エラー", "コピーに失敗しました。");
+        });
+      } else {
+        showModal("スタンプ履歴", "以下のテキストをコピーしてください。\n\n" + logText);
+      }
+    }
+    function calculateStreak() {
+      const history = getDailyHistory().filter((item) => !getSpecialStampKeys().has(getRecordDateKey(item)));
+      if (history.length === 0) return 0;
+
+      const uniqueKeys = [...new Set(history.map(getRecordDateKey))].sort().reverse();
+      const today = todayKey();
+      const lastKey = uniqueKeys[0];
+      
+      const gap = daysBetweenKeys(lastKey, today);
+      if (gap > 1) return 0; // 2日以上空いたらリセット
+
+      let streak = 1;
+      let current = lastKey;
+      for (let i = 1; i < uniqueKeys.length; i++) {
+        const prev = addDaysToKey(current, -1);
+        if (uniqueKeys[i] === prev) {
+          streak++;
+          current = prev;
+        } else {
+          break;
+        }
+      }
+      return streak;
+    }
+
+    function render() {
+      if (!state.authenticated) {
+        renderLock();
+        return;
+      }
+
+      if (state.view === "home") renderHome();
+      if (state.view === "deck") renderDeck();
+      if (state.view === "complete") renderComplete();
+      if (state.view === "calendar") renderCalendar();
+      if (state.view === "settings") renderSettings();
+    }
+
+    function renderShell(content) {
+      const streak = calculateStreak();
+      app.innerHTML = `
+        <div class="view-frame">
+          <header class="app-header">
+            <div class="header-side" style="justify-self: start; padding-left: 10px;">
+              <button class="icon-button" style="border-radius: 50%;" data-action="go" data-view="settings" title="設定">⚙️</button>
+            </div>
+            <div class="brand" aria-label="アプリ名" style="grid-column: 2; display: flex; flex-direction: column; align-items: center;">
+              <p class="brand-kicker">西川巧真専用 <span style="margin-left: 8px; font-weight: 400; font-size: 0.7rem; color: var(--muted);">継続日数 ${streak}日目</span></p>
+            </div>
+            <div style="width: 48px;"></div>
+          </header>
+          <main class="screen">${content}</main>
+        </div>
+      `;
+    }
+
+    function renderSettings() {
+      renderShell(`
+        <section class="settings-panel">
+          <h2 class="section-title">データ管理</h2>
+          <div class="stack">
+            <p class="section-copy">スタンプ履歴（実施日時）をテキスト形式で書き出し、クリップボードにコピーします。</p>
+            <button class="primary-button" type="button" data-action="backup-data">履歴をテキストで保存</button>
+            <hr style="border: 0; border-top: 1px solid var(--line); margin: 15px 0;">
+            <button class="secondary-button" type="button" data-action="go" data-view="home">戻る</button>
+          </div>
+        </section>
+      `);
+    }
+
+    function renderLock() {
+      const stageIndex = state.unlockStep;
+      const steps = AUTH_SEQUENCE.map((_, index) => {
+        const className = index < stageIndex
+          ? "auth-step is-done"
+          : index === stageIndex
+            ? "auth-step is-active"
+            : "auth-step";
+        return `<div class="${className}">第${index + 1}段階</div>`;
+      }).join("");
+
+      app.innerHTML = `
+        <main class="lock-layout view-frame">
+          <img class="lock-visual switchable-image${getFocusImageClass()}" src="${getFocusImage()}" alt="切り替え可能な写真" data-action="toggle-image">
+          <section class="lock-panel">
+            <div class="stack">
+              <p class="kicker">西川巧真専用</p>
+              <h1 class="page-title">今日も罪を償う</h1>
+              <p class="favorite-quote">${escapeHTML(state.favoriteQuote)}</p>
+            </div>
+            <p class="auth-stage">${escapeHTML(getUnlockStageLabel())}</p>
+            <div class="auth-steps" aria-hidden="true">${steps}</div>
+            <form class="stack" data-form="unlock">
+              <div class="form-field">
+                <label for="password">${escapeHTML(getUnlockStageHint())}</label>
+                <input id="password" name="password" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="4桁の数字">
+              </div>
+              <button class="primary-button" type="submit">${escapeHTML(getUnlockButtonLabel())}</button>
+            </form>
+            <p class="hint">順番が違う場合は最初からやり直しです。正しく3段階を通した時だけ、この端末で保持します。</p>
+          </section>
+        </main>
+      `;
+      const input = app.querySelector("#password");
+      if (input) input.focus();
+    }
+
+    function renderHome() {
+      const todayLabel = formatDate(new Date().toISOString(), "date");
+      const completedToday = hasCompletedMindsetToday();
+      const primaryAction = completedToday
+        ? { action: "open-calendar", label: "カレンダー" }
+        : { action: "start-run", label: "マインドセット" };
+
+      renderShell(`
+        <section class="hero">
+          <div class="hero-content">
+            <p class="kicker">${escapeHTML(todayLabel)}</p>
+            <h2 class="page-title">今日も罪を償う</h2>
+            <p class="favorite-quote">${escapeHTML(state.favoriteQuote)}</p>
+            <button class="primary-button" type="button" data-action="${primaryAction.action}">${primaryAction.label}</button>
+          </div>
+          <img class="hero-image switchable-image${getFocusImageClass()}" src="${getFocusImage()}" alt="切り替え可能な写真" data-action="toggle-image">
+        </section>
+        <section class="section">
+          <h2 class="section-title">最近の記録</h2>
+          ${renderStampHistory()}
+        </section>
+      `);
+    }
+
+    function renderDeck() {
+      const deck = getDeck();
+      const card = deck[state.activeIndex] || deck[0];
+      const progress = `${Math.round(((state.activeIndex + 1) / deck.length) * 100)}%`;
+
+      renderShell(`
+        <section class="deck-shell">
+          <div class="stack">
+            <div class="deck-meta">
+              <span>マインドセット</span>
+              <span>${state.activeIndex + 1} / ${deck.length}</span>
+            </div>
+            <div class="progress-rail" aria-hidden="true">
+              <div class="progress-bar" style="--progress: ${progress};"></div>
+            </div>
+          </div>
+          <section class="deck-card" id="deckCard">
+            <p class="card-type">${escapeHTML(card.type)}</p>
+            <p class="card-text">${formatMultilineText(card.text)}</p>
+            ${card.note ? `<p class="card-note">${escapeHTML(card.note)}</p>` : ""}
+          </section>
+          <button class="primary-button" type="button" data-action="confirm-card">確認した</button>
+        </section>
+      `);
+    }
+
+    function renderComplete() {
+      const cards = state.confirmedCards.length ? state.confirmedCards : getDeck();
+      const summary = cards
+        .map((card, index) => `
+          <div class="summary-item">
+            <span class="summary-number">${index + 1}</span>
+            <span>
+              <strong>${escapeHTML(card.type)}</strong>
+              <span>${formatMultilineText(card.text)}</span>
+              ${card.note ? `<span class="summary-note">${escapeHTML(card.note)}</span>` : ""}
+            </span>
+          </div>
+        `)
+        .join("");
+
+      renderShell(`
+        <section class="hero">
+          <div class="hero-content">
+            <div class="completion-mark" aria-hidden="true">✓</div>
+            <h2 class="page-title">罪を償え。</h2>
+            <button class="primary-button" type="button" data-action="open-calendar">カレンダー</button>
+          </div>
+          <img class="hero-image switchable-image${getFocusImageClass()}" src="${getFocusImage()}" alt="切り替え可能な写真" data-action="toggle-image">
+        </section>
+        <section class="section">
+          <h2 class="section-title">確認したこと</h2>
+          <div class="summary-list">${summary}</div>
+        </section>
+      `);
+    }
+
+    function renderCalendar() {
+      renderShell(`
+        <section class="calendar-shell">
+          <button class="secondary-button" type="button" data-action="go" data-view="home">戻る</button>
+          <iframe class="calendar-frame" src="${escapeHTML(CALENDAR_URL)}" title="カレンダー"></iframe>
+        </section>
+      `);
+    }
+
+    async function moveCard(direction) {
+      if (state.transitioning) return;
+      const deck = getDeck();
+      const nextIndex = state.activeIndex + direction;
+      if (nextIndex < 0 || nextIndex >= deck.length) return;
+      state.transitioning = true;
+      const cardNode = app.querySelector("#deckCard");
+      if (cardNode) cardNode.classList.add("is-exiting");
+      await wait(170);
+      state.activeIndex = nextIndex;
+      state.transitioning = false;
+      renderDeck();
+    }
+
+    async function confirmCard() {
+      if (state.transitioning) return;
+      const deck = getDeck();
+      const card = deck[state.activeIndex];
+      if (card) {
+        state.confirmedCards[state.activeIndex] = card;
+      }
+
+      if (state.activeIndex + 1 >= deck.length) {
+        state.transitioning = true;
+        const cardNode = app.querySelector("#deckCard");
+        if (cardNode) cardNode.classList.add("is-exiting");
+        await wait(170);
+        state.confirmedCards = deck.slice();
+        addHistory(state.confirmedCards);
+        state.view = "complete";
+        state.transitioning = false;
+        render();
+        return;
+      }
+
+      await moveCard(1);
+    }
+
+    function startRun() {
+      state.activeIndex = 0;
+      state.confirmedCards = [];
+      state.view = "deck";
+      render();
+    }
+
+    function showModal(title, message, actions = [{ label: "OK", value: "ok", style: "primary-button" }]) {
+      modalRoot.innerHTML = `
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+          <h2 id="modalTitle">${escapeHTML(title)}</h2>
+          <p>${escapeHTML(message)}</p>
+          <div class="${actions.length > 1 ? "button-row" : "stack"}">
+            ${actions.map((action) => `
+              <button class="${escapeHTML(action.style || "secondary-button")}" type="button" data-modal-action="${escapeHTML(action.value)}">${escapeHTML(action.label)}</button>
+            `).join("")}
+          </div>
+        </section>
+      `;
+      modalRoot.classList.add("is-open");
+      const firstButton = modalRoot.querySelector("button");
+      if (firstButton) firstButton.focus();
+
+      return new Promise((resolve) => {
+        const onClick = (event) => {
+          const button = event.target.closest("[data-modal-action]");
+          if (!button) return;
+          modalRoot.classList.remove("is-open");
+          modalRoot.innerHTML = "";
+          modalRoot.removeEventListener("click", onClick);
+          resolve(button.dataset.modalAction);
+        };
+        modalRoot.addEventListener("click", onClick);
+      });
+    }
+
+    app.addEventListener("submit", (event) => {
+      const form = event.target.closest("form");
+      if (!form) return;
+      event.preventDefault();
+
+      if (form.dataset.form === "unlock") {
+        const password = String(new FormData(form).get("password") || "").trim();
+        const expected = AUTH_SEQUENCE[state.unlockStep];
+
+        if (password === expected) {
+          if (state.unlockStep + 1 >= AUTH_SEQUENCE.length) {
+            resetUnlockProgress();
+            state.authenticated = true;
+            localStorage.setItem(STORAGE_KEYS.authenticated, "true");
+            state.view = "home";
+            render();
+            return;
+          }
+
+          state.unlockStep += 1;
+          renderLock();
+        } else {
+          resetUnlockProgress();
+          renderLock();
+          showModal("開けませんでした", "順番が違います。1段階目からやり直してください。");
+        }
+      }
+
+    });
+
+    app.addEventListener("pointerdown", handlePointerFeedback);
+    modalRoot.addEventListener("pointerdown", handlePointerFeedback);
+
+    app.addEventListener("click", async (event) => {
+      const actionTarget = event.target.closest("[data-action]");
+      if (!actionTarget || actionTarget.disabled) return;
+      const action = actionTarget.dataset.action;
+      if (!action) return;
+
+      if (action === "go") {
+        state.view = actionTarget.dataset.view || "home";
+        state.transitioning = false;
+        render();
+      }
+
+      if (action === "toggle-image") {
+        await toggleFocusImage();
+      }
+
+      if (action === "start-run") {
+        startRun();
+      }
+
+      if (action === "open-calendar") {
+        state.view = "calendar";
+        state.transitioning = false;
+        render();
+      }
+
+      if (action === "confirm-card") {
+        confirmCard();
+      }
+
+      if (action === "backup-data") {
+        backupData();
+      }
+
+      if (action === "lock-reset") {
+        const result = await showModal("認証状態をリセットしますか", "次回からもう一度パスワード入力が必要になります。", [
+          { label: "やめる", value: "cancel", style: "secondary-button" },
+          { label: "リセット", value: "reset", style: "danger-button" }
+        ]);
+        if (result === "reset") {
+          localStorage.removeItem(STORAGE_KEYS.authenticated);
+          state.authenticated = false;
+          resetUnlockProgress();
+          state.view = "home";
+          render();
+        }
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
