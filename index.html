@@ -650,6 +650,7 @@
     .stamp-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      grid-auto-flow: dense;
       gap: 12px;
       align-items: start;
       max-height: 360px;
@@ -659,6 +660,7 @@
     }
 
     .stamp {
+      position: relative;
       width: 88px;
       aspect-ratio: 1;
       display: inline-grid;
@@ -669,11 +671,14 @@
       background: #e3e7e5;
       color: #5f6966;
       box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.38), 0 12px 28px rgba(22, 40, 36, 0.09);
+      overflow: hidden;
       text-align: center;
       line-height: 1.2;
     }
 
     .stamp-inner {
+      position: relative;
+      z-index: 1;
       display: grid;
       width: 100%;
       height: 100%;
@@ -717,6 +722,136 @@
       background: linear-gradient(145deg, #efe6ff, #7652b7);
       color: #ffffff;
       box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.18), 0 14px 30px rgba(111, 74, 166, 0.24);
+    }
+
+    .stamp.is-black {
+      border-color: rgba(0, 0, 0, 0.72);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(95, 95, 95, 0.62), transparent 44%),
+        linear-gradient(145deg, #242424, #050505 64%, #000000);
+      color: #ffffff;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+        inset 0 -16px 24px rgba(0, 0, 0, 0.62),
+        0 0 0 1px rgba(0, 0, 0, 0.42),
+        0 0 22px rgba(0, 0, 0, 0.36),
+        0 18px 36px rgba(0, 0, 0, 0.32);
+      animation: blackGlow 3.8s infinite ease-in-out;
+    }
+
+    .stamp.is-black::after {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 5px;
+      box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.76);
+      pointer-events: none;
+    }
+
+    .stamp.is-wide {
+      grid-column: span 2;
+      width: min(204px, 100%);
+      min-height: 86px;
+      aspect-ratio: 2.45 / 1;
+      border-radius: 7px;
+    }
+
+    .stamp.is-wide .stamp-inner.is-warning {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: center;
+      justify-content: center;
+      align-items: center;
+      column-gap: 7px;
+      row-gap: 2px;
+      padding: 8px 10px;
+    }
+
+    .stamp.is-wide .stamp-year {
+      flex-basis: 100%;
+    }
+
+    .stamp.is-wide .stamp-mark {
+      font-size: 1.22rem;
+      text-shadow: 0 0 14px rgba(255, 255, 255, 0.16), 0 0 10px rgba(0, 0, 0, 0.92);
+    }
+
+    .stamp.is-wide .stamp-label-line {
+      min-height: 0;
+    }
+
+    .stamp.is-wide .stamp-date {
+      font-size: 0.72rem;
+    }
+
+    .stamp.is-wide .stamp-sub-label,
+    .stamp.is-wide .stamp-note {
+      flex-basis: 100%;
+      max-width: 100%;
+    }
+
+    .stamp.is-cheat {
+      border-color: rgba(25, 125, 72, 0.34);
+      background: linear-gradient(145deg, #e4f8e9, #38aa68 66%, #17733f);
+      color: #063c22;
+      box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.24), 0 14px 30px rgba(25, 125, 72, 0.22);
+    }
+
+    .stamp-inner.is-cheat {
+      row-gap: 3px;
+      padding-block: 8px 7px;
+    }
+
+    .stamp-cheat-mark {
+      display: block;
+      font-size: 1.55rem;
+      font-weight: 950;
+      line-height: 0.95;
+    }
+
+    .stamp-cheat-label {
+      display: block;
+      font-size: 0.58rem;
+      font-weight: 950;
+      line-height: 1.05;
+    }
+
+    @keyframes blackGlow {
+      0%, 100% {
+        filter: brightness(0.96);
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+          inset 0 -16px 24px rgba(0, 0, 0, 0.62),
+          0 0 0 1px rgba(0, 0, 0, 0.42),
+          0 0 22px rgba(0, 0, 0, 0.36),
+          0 18px 36px rgba(0, 0, 0, 0.32);
+      }
+      50% {
+        filter: brightness(1.08);
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+          inset 0 -16px 26px rgba(0, 0, 0, 0.72),
+          0 0 0 1px rgba(0, 0, 0, 0.56),
+          0 0 32px rgba(0, 0, 0, 0.52),
+          0 20px 42px rgba(0, 0, 0, 0.42);
+      }
+    }
+
+    .message-underline {
+      text-decoration: underline;
+      text-decoration-color: rgba(185, 60, 58, 0.6);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 4px;
+    }
+
+    .stamp.is-clickable {
+      cursor: pointer;
+      transition: transform 120ms var(--ease);
+    }
+
+    .stamp.is-clickable:active {
+      transform: scale(0.94);
     }
 
     .stamp-year,
@@ -783,6 +918,7 @@
       padding: 1px 4px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.86);
+      color: #111817;
       font-size: 0.56rem;
       font-weight: 900;
       line-height: 1.05;
@@ -792,6 +928,16 @@
     .stamp-sub-label.is-red {
       color: #f00018;
       text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+    }
+
+    .stamp-sub-label.is-plain {
+      min-width: 0;
+      min-height: 0;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #ffffff;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.72);
     }
 
     .stamp-sub-label.is-pulse {
@@ -809,6 +955,66 @@
       background: transparent;
       color: transparent;
       text-shadow: none;
+    }
+
+    .stamp-note {
+      display: block;
+      color: rgba(255, 255, 255, 0.84);
+      font-size: 0.56rem;
+      font-weight: 900;
+      line-height: 1.1;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.62);
+    }
+
+    .stamp-note.is-death {
+      width: fit-content;
+      margin-inline: auto;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.90);
+      color: #f00018;
+      font-size: 0.66rem;
+      font-weight: 950;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.74);
+      box-shadow: 0 0 14px rgba(0, 0, 0, 0.50);
+      animation: dangerPulse 1.4s infinite var(--ease);
+    }
+
+    .cheat-day-link {
+      border-color: rgba(25, 125, 72, 0.22);
+      background: linear-gradient(145deg, rgba(228, 248, 233, 0.96), rgba(255, 255, 255, 0.76));
+      color: #063c22;
+    }
+
+    .cheat-announcement-text {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.94rem;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .cheat-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .cheat-url-button {
+      width: 58px;
+      min-height: 58px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(25, 125, 72, 0.24);
+      border-radius: 50%;
+      background: linear-gradient(145deg, #e4f8e9, #ffffff);
+      color: #063c22;
+      box-shadow: 0 14px 28px rgba(25, 125, 72, 0.18);
+      font-size: 1.42rem;
+      font-weight: 950;
     }
 
     .summary-item {
@@ -970,6 +1176,16 @@
       color: var(--ink-soft);
       line-height: 1.8;
       text-align: center;
+    }
+
+    .modal-body-scroll {
+      max-height: 56dvh;
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-width: thin;
+      text-align: left;
+      white-space: pre-wrap;
+      word-break: break-all;
     }
 
     .visually-hidden {
@@ -1181,6 +1397,10 @@
 
     const AUTH_SEQUENCE = ["0418", "0429", "0415"];
     const CALENDAR_URL = "https://tatsuko0429.github.io/yome-senyo-tool/";
+    const CHEAT_DAY_URL = "https://www.notion.so/35287ce6d69280f5b9def969f515f810?source=copy_link";
+    const BGM_VIDEO_URL = "https://www.icloud.com/sharedalbum/#B235nhQSTidALJe";
+    const CHEAT_DAY_ORIGIN_KEY = "2026-04-30";
+    const CHEAT_DAY_INTERVAL_DAYS = 7;
 
     const STORAGE_KEYS = {
       authenticated: "personal_mindset_authenticated_v3",
@@ -1224,6 +1444,8 @@
     const favoriteQuotes = [
       "正すべきものから、目を逸らさない。"
     ];
+
+    const DEATH_PENALTY_MESSAGE = "4月28日、食事会の後、妻から許可されていないにもかかわらず、また妻が嫌がるということにも気づかず、勝手にパパ友さんを家に上げた挙げ句、お酒を飲み、お風呂も許可する始末。その後、図々しくも、パパ友さんの家に上がり込み、みんなでお酒を飲み、僕以外のパパ友さんは、区切りのいいタイミングで家に帰ったにも関わらず、自分は子供が寝てしまっていたことを言い訳に、そのまま滞在した挙げ句、ソファーをお借りして、4月29日、朝9時頃まで寝てしまう。自分が寝てしまうことで、相手の奥さんが帰ってきづらいということにも気づかず、相手側の奥さんに、オールで安心して寝る場所も与えられず、また、先に起きた子供たちと一緒に公園に行ってくださり、寝る暇もないまま、子供を見させてしまうという始末。\n\n俺はこれから少しずつメンタルも回復し、<u>ポジティブになるかもしれないが、もう調子に乗るな。どれだけ回復して元気になったとしても、このメッセージで思い出せ。何もするな。自慰行為も自粛しろ。お酒は嗜む程度にしろ。飲みすぎるな。自分を正常で正しい人間だと思うな。常に間違っている。選択もすべて愚かだ。俺は病気だ。俺は病気だ。俺は病気だ。</u>自覚しろ。滞りなく生きて死ね。";
 
     const specialStamps = [
       {
@@ -1271,6 +1493,22 @@
         mark: "×",
         tone: "blood",
         title: "2026年4月27日。断固として正す。"
+      },
+      {
+        id: "warning-2026-04-29-30",
+        dateKey: "2026-04-30",
+        dateKeys: ["2026-04-29", "2026-04-30"],
+        dateLabel: "4/29・4/30",
+        label: "死刑",
+        mark: "✕",
+        subLabel: "自慰",
+        subTone: "plain",
+        memo: "死刑",
+        memoTone: "death",
+        tone: "black",
+        shape: "wide",
+        title: "自分を病気だと自覚しろ。",
+        message: DEATH_PENALTY_MESSAGE
       }
     ];
 
@@ -1596,13 +1834,49 @@
     }
 
     function getSpecialStampKeys() {
-      return new Set(specialStamps.map((stamp) => stamp.dateKey));
+      return new Set(specialStamps.flatMap((stamp) => stamp.dateKeys || [stamp.dateKey]));
+    }
+
+    function isCheatDay(dateKey = todayKey()) {
+      const daysFromOrigin = daysBetweenKeys(CHEAT_DAY_ORIGIN_KEY, dateKey);
+      return daysFromOrigin >= CHEAT_DAY_INTERVAL_DAYS && daysFromOrigin % CHEAT_DAY_INTERVAL_DAYS === 0;
+    }
+
+    function getCheatDayStamps(history = getDailyHistory()) {
+      const cheatKeys = [...new Set(history.map(getRecordDateKey))]
+        .filter((dateKey) => dateKey && isCheatDay(dateKey));
+
+      return cheatKeys.map((currentKey) => ({
+        kind: "cheat",
+        dateKey: currentKey,
+        mark: "∞",
+        label: "チートDay",
+        title: "本日、禁欲解禁日です。"
+      }));
+    }
+
+    function openCheatDayUrl() {
+      window.open(CHEAT_DAY_URL, "_blank", "noopener,noreferrer");
+    }
+
+    function openBgmVideoUrl() {
+      window.open(BGM_VIDEO_URL, "_blank", "noopener,noreferrer");
+    }
+
+    function findSpecialStamp(value) {
+      return specialStamps.find((stamp) => {
+        return stamp.id === value || stamp.dateKey === value || (stamp.dateKeys || []).includes(value);
+      });
     }
 
     function getVisibleStampHistory() {
       const specialKeys = getSpecialStampKeys();
-      const regularItems = getDailyHistory()
-        .filter((item) => !specialKeys.has(getRecordDateKey(item)))
+      const dailyHistory = getDailyHistory();
+      const regularItems = dailyHistory
+        .filter((item) => {
+          const dateKey = getRecordDateKey(item);
+          return !specialKeys.has(dateKey) && !isCheatDay(dateKey);
+        })
         .map((item) => ({
           kind: "regular",
           dateKey: getRecordDateKey(item),
@@ -1612,6 +1886,7 @@
 
       const warningItems = specialStamps.map((stamp) => ({
         kind: "warning",
+        id: stamp.id,
         dateKey: stamp.dateKey,
         mark: stamp.mark,
         label: stamp.label,
@@ -1619,22 +1894,29 @@
         subLabel: stamp.subLabel || "",
         subTone: stamp.subTone || "",
         tone: stamp.tone || "warning",
-        title: stamp.title
+        shape: stamp.shape || "",
+        dateLabel: stamp.dateLabel || "",
+        title: stamp.title,
+        message: stamp.message || "",
+        memo: stamp.memo || "",
+        memoTone: stamp.memoTone || ""
       }));
 
-      return [...regularItems, ...warningItems].sort((a, b) => {
+      const cheatItems = getCheatDayStamps(dailyHistory);
+      const kindOrder = { warning: 0, cheat: 1, regular: 2 };
+
+      return [...regularItems, ...warningItems, ...cheatItems].sort((a, b) => {
         const keyDiff = b.dateKey.localeCompare(a.dateKey);
         if (keyDiff !== 0) return keyDiff;
-        if (a.kind !== b.kind) return a.kind === "warning" ? -1 : 1;
+        if (a.kind !== b.kind) return (kindOrder[a.kind] ?? 9) - (kindOrder[b.kind] ?? 9);
         return 0;
       });
     }
 
     function hasCompletedMindsetToday() {
       const key = todayKey();
-      const specialKeys = getSpecialStampKeys();
       return getDailyHistory().some((item) => {
-        return getRecordDateKey(item) === key && !specialKeys.has(key);
+        return getRecordDateKey(item) === key;
       });
     }
 
@@ -1779,25 +2061,32 @@
         return `<div class="empty-state">記録はまだありません。</div>`;
       }
 
-      const streakKeys = getCurrentStreakKeys(getDailyHistory().filter((item) => !getSpecialStampKeys().has(getRecordDateKey(item))));
+      const streakKeys = getCurrentStreakKeys(getDailyHistory());
       return `
         <div class="stamp-grid" aria-label="記録スタンプ">
           ${history.map((item) => {
             const isWarning = item.kind === "warning";
-            const isCurrent = !isWarning && streakKeys.has(item.dateKey);
-            const toneClass = isWarning ? ` is-${item.tone || "warning"}` : "";
-            const dateParts = isWarning ? formatStampDateKey(item.dateKey) : formatStampDate(item.completedAt);
+            const isCheat = item.kind === "cheat";
+            const isSpecial = isWarning || isCheat;
+            const isCurrent = !isSpecial && streakKeys.has(item.dateKey);
+            const toneClass = isWarning ? ` is-${item.tone || "warning"}` : isCheat ? " is-cheat" : "";
+            const shapeClass = item.shape ? ` is-${escapeHTML(item.shape)}` : "";
+            const clickableClass = (isWarning && item.message) ? " is-clickable" : "";
+            const actionAttr = clickableClass ? ` data-action="show-special-message" data-id="${escapeHTML(item.id || item.dateKey)}"` : "";
+            const dateParts = isSpecial ? formatStampDateKey(item.dateKey) : formatStampDate(item.completedAt);
+            const dateLabel = item.dateLabel || dateParts.date;
             const subLabelClass = item.subLabel
               ? `${item.subTone ? ` is-${escapeHTML(item.subTone)}` : ""}${item.subLabel === "次 死刑" ? " is-pulse" : ""}`
               : " is-placeholder";
+            const memoClass = item.memoTone ? ` is-${escapeHTML(item.memoTone)}` : "";
+            const warningContent = `<span class="stamp-mark">${escapeHTML(item.mark)}</span><span class="stamp-label-line"><span class="stamp-label">${escapeHTML(item.label)}</span>${item.metaLabel ? `<span class="stamp-label-meta">${escapeHTML(item.metaLabel)}</span>` : ""}</span><span class="stamp-sub-label${subLabelClass}"${item.subLabel ? "" : ' aria-hidden="true"'}>${escapeHTML(item.subLabel || "")}</span>${item.memo ? `<span class="stamp-note${memoClass}">${escapeHTML(item.memo)}</span>` : ""}`;
+            const cheatContent = `<span class="stamp-cheat-mark">${escapeHTML(item.mark)}</span><span class="stamp-cheat-label">${escapeHTML(item.label)}</span>`;
             return `
-              <div class="stamp${isCurrent ? " is-current" : ""}${toneClass}" title="${escapeHTML(item.title)}">
-                <span class="stamp-inner ${isWarning ? "is-warning" : "is-regular"}">
+              <div class="stamp${isCurrent ? " is-current" : ""}${toneClass}${shapeClass}${clickableClass}" title="${escapeHTML(item.title)}"${actionAttr}>
+                <span class="stamp-inner ${isCheat ? "is-cheat" : isWarning ? "is-warning" : "is-regular"}">
                   <span class="stamp-year">${escapeHTML(dateParts.year)}</span>
-                  <span class="stamp-date">${escapeHTML(dateParts.date)}</span>
-                  ${isWarning
-                    ? `<span class="stamp-mark">${escapeHTML(item.mark)}</span><span class="stamp-label-line"><span class="stamp-label">${escapeHTML(item.label)}</span>${item.metaLabel ? `<span class="stamp-label-meta">${escapeHTML(item.metaLabel)}</span>` : ""}</span><span class="stamp-sub-label${subLabelClass}"${item.subLabel ? "" : ' aria-hidden="true"'}>${escapeHTML(item.subLabel || "")}</span>`
-                    : `<span class="stamp-time">${escapeHTML(formatStampTime(item.completedAt))}</span>`}
+                  <span class="stamp-date">${escapeHTML(dateLabel)}</span>
+                  ${isCheat ? cheatContent : isWarning ? warningContent : `<span class="stamp-time">${escapeHTML(formatStampTime(item.completedAt))}</span>`}
                 </span>
               </div>
             `;
@@ -1884,6 +2173,9 @@
 
     function renderShell(content) {
       const streak = calculateStreak();
+      const cheatDayLink = isCheatDay()
+        ? `<button class="icon-button cheat-day-link" type="button" data-action="open-cheat-day-url" title="解禁日ページを開く" aria-label="解禁日ページを開く">🔍</button>`
+        : "";
       app.innerHTML = `
         <div class="view-frame">
           <header class="app-header">
@@ -1893,7 +2185,7 @@
             <div class="brand" aria-label="アプリ名" style="grid-column: 2; display: flex; flex-direction: column; align-items: center;">
               <p class="brand-kicker">西川巧真専用 <span style="margin-left: 8px; font-weight: 400; font-size: 0.7rem; color: var(--muted);">継続日数 ${streak}日目</span></p>
             </div>
-            <div style="width: 48px;"></div>
+            <div class="header-side" style="justify-self: end; width: 48px;">${cheatDayLink}</div>
           </header>
           <main class="screen">${content}</main>
         </div>
@@ -1907,6 +2199,7 @@
           <div class="stack">
             <p class="section-copy">スタンプ履歴（実施日時）をテキスト形式で書き出し、クリップボードにコピーします。</p>
             <button class="primary-button" type="button" data-action="backup-data">履歴をテキストで保存</button>
+            <button class="secondary-button" type="button" data-action="open-bgm-video-url">BGMの動画を再生</button>
             <hr style="border: 0; border-top: 1px solid var(--line); margin: 15px 0;">
             <button class="secondary-button" type="button" data-action="go" data-view="home">戻る</button>
           </div>
@@ -1955,7 +2248,7 @@
       const todayLabel = formatDate(new Date().toISOString(), "date");
       const completedToday = hasCompletedMindsetToday();
       const primaryAction = completedToday
-        ? { action: "open-calendar", label: "カレンダー" }
+        ? { action: "open-calendar", label: "カレンダーを開く" }
         : { action: "start-run", label: "マインドセット" };
 
       renderShell(`
@@ -2021,7 +2314,7 @@
           <div class="hero-content">
             <div class="completion-mark" aria-hidden="true">✓</div>
             <h2 class="page-title">罪を償え。</h2>
-            <button class="primary-button" type="button" data-action="open-calendar">カレンダー</button>
+            <button class="primary-button" type="button" data-action="show-special-message" data-id="2026-04-29" data-announce-cheat-day="true">インプット</button>
           </div>
           <img class="hero-image switchable-image${getFocusImageClass()}" src="${getFocusImage()}" alt="切り替え可能な写真" data-action="toggle-image">
         </section>
@@ -2115,6 +2408,145 @@
       });
     }
 
+    function showCheatDayAnnouncement() {
+      modalRoot.innerHTML = `
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+          <h2 id="modalTitle">本日、禁欲解禁日です。</h2>
+          <p class="cheat-announcement-text">指定ページを開く場合は虫眼鏡を押してください。</p>
+          <div class="cheat-actions">
+            <button class="cheat-url-button" type="button" data-modal-action="open-cheat-day-url" title="指定URLを開く" aria-label="指定URLを開く">🔍</button>
+            <button class="secondary-button" type="button" data-modal-action="ok" style="width: auto;">閉じる</button>
+          </div>
+        </section>
+      `;
+      modalRoot.classList.add("is-open");
+      const firstButton = modalRoot.querySelector("button");
+      if (firstButton) firstButton.focus();
+
+      return new Promise((resolve) => {
+        const onClick = (event) => {
+          const button = event.target.closest("[data-modal-action]");
+          if (!button) return;
+          const action = button.dataset.modalAction;
+          if (action === "open-cheat-day-url") {
+            openCheatDayUrl();
+          }
+          modalRoot.classList.remove("is-open");
+          modalRoot.innerHTML = "";
+          modalRoot.removeEventListener("click", onClick);
+          resolve(action);
+        };
+        modalRoot.addEventListener("click", onClick);
+      });
+    }
+
+    async function showTypewriterModal(title, text, buttonLabel = "閉じる") {
+      modalRoot.innerHTML = `
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+          <h2 id="modalTitle">${escapeHTML(title)}</h2>
+          <div class="modal-body-scroll" id="typewriterBody"></div>
+          <div class="stack" id="modalActions" style="visibility: hidden;">
+            <button class="primary-button" type="button" data-modal-action="ok">${escapeHTML(buttonLabel)}</button>
+          </div>
+        </section>
+      `;
+      modalRoot.classList.add("is-open");
+      const body = modalRoot.querySelector("#typewriterBody");
+      const actions = modalRoot.querySelector("#modalActions");
+
+      let isSkipped = false;
+      const handleSkip = () => { isSkipped = true; };
+      modalRoot.addEventListener("click", handleSkip, { once: true });
+
+      // メッセージのパース（<u>タグを抽出）
+      const tokens = [];
+      let tempText = text;
+      while (tempText) {
+        if (tempText.startsWith("<u>")) {
+          const endIdx = tempText.indexOf("</u>");
+          if (endIdx !== -1) {
+            tokens.push({ text: tempText.substring(3, endIdx), underlined: true });
+            tempText = tempText.substring(endIdx + 4);
+          } else {
+            tokens.push({ text: tempText.substring(3), underlined: true });
+            tempText = "";
+          }
+        } else {
+          const nextTag = tempText.indexOf("<u>");
+          if (nextTag !== -1) {
+            tokens.push({ text: tempText.substring(0, nextTag), underlined: false });
+            tempText = tempText.substring(nextTag);
+          } else {
+            tokens.push({ text: tempText, underlined: false });
+            tempText = "";
+          }
+        }
+      }
+
+      const renderCurrent = (charList) => {
+        body.innerHTML = "";
+        let currentSpan = null;
+        charList.forEach(item => {
+          if (item.underlined) {
+            if (!currentSpan || !currentSpan.classList.contains("message-underline")) {
+              currentSpan = document.createElement("span");
+              currentSpan.className = "message-underline";
+              body.appendChild(currentSpan);
+            }
+            currentSpan.textContent += item.char;
+          } else {
+            currentSpan = null;
+            if (item.char === "\n") {
+              body.appendChild(document.createElement("br"));
+            } else {
+              body.appendChild(document.createTextNode(item.char));
+            }
+          }
+        });
+        body.scrollTop = body.scrollHeight;
+      };
+
+      const allChars = [];
+      tokens.forEach(token => {
+        [...token.text].forEach(char => {
+          allChars.push({ char, underlined: token.underlined });
+        });
+      });
+
+      for (let i = 0; i < allChars.length; i++) {
+        if (isSkipped) {
+          renderCurrent(allChars);
+          break;
+        }
+
+        renderCurrent(allChars.slice(0, i + 1));
+        const char = allChars[i].char;
+        let delay = 35;
+        if (char === "。" || char === "！" || char === "？") delay = 450;
+        else if (char === "、") delay = 180;
+        else if (char === "\n") delay = 300;
+
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+
+      modalRoot.removeEventListener("click", handleSkip);
+      actions.style.visibility = "visible";
+      const btn = actions.querySelector("button");
+      if (btn) btn.focus();
+
+      return new Promise((resolve) => {
+        const onClick = (event) => {
+          const button = event.target.closest("[data-modal-action]");
+          if (!button) return;
+          modalRoot.classList.remove("is-open");
+          modalRoot.innerHTML = "";
+          modalRoot.removeEventListener("click", onClick);
+          resolve();
+        };
+        modalRoot.addEventListener("click", onClick);
+      });
+    }
+
     app.addEventListener("submit", (event) => {
       const form = event.target.closest("form");
       if (!form) return;
@@ -2174,12 +2606,34 @@
         render();
       }
 
+      if (action === "open-cheat-day-url") {
+        openCheatDayUrl();
+      }
+
+      if (action === "open-bgm-video-url") {
+        openBgmVideoUrl();
+      }
+
       if (action === "confirm-card") {
         confirmCard();
       }
 
       if (action === "backup-data") {
         backupData();
+      }
+
+      if (action === "show-special-message") {
+        const id = actionTarget.dataset.id;
+        const stamp = findSpecialStamp(id);
+        if (stamp && stamp.message) {
+          const shouldAnnounceCheatDay = actionTarget.dataset.announceCheatDay === "true";
+          await showTypewriterModal(stamp.title, stamp.message, shouldAnnounceCheatDay ? "インプット" : "閉じる");
+          if (shouldAnnounceCheatDay && isCheatDay()) {
+            await showCheatDayAnnouncement();
+          }
+          state.view = "home";
+          render();
+        }
       }
 
       if (action === "lock-reset") {
