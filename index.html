@@ -698,6 +698,30 @@
       text-align: left;
     }
 
+    .stamp-month-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 13px;
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.74);
+      color: var(--ink);
+      box-shadow: 0 8px 20px rgba(22, 40, 36, 0.06);
+      font-size: 0.92rem;
+      font-weight: 900;
+      line-height: 1.35;
+    }
+
+    .stamp-month-button::after {
+      content: "開く";
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
     .stamp-month-group .stamp-grid {
       max-height: none;
       overflow: visible;
@@ -1629,7 +1653,8 @@
       imageTransitioning: false,
       favoriteQuote: chooseFavoriteQuote(),
       unlockStep: 0,
-      imageIndex: getInitialImageIndex()
+      imageIndex: getInitialImageIndex(),
+      expandedStampMonths: new Set()
     };
 
     function getInitialAuth() {
@@ -1923,6 +1948,10 @@
       return record.dateKey || dateKeyFromISO(record.completedAt);
     }
 
+    function isCompletionHistoryRecord(record) {
+      return record && record.correctionMark !== "×";
+    }
+
     function getDailyHistory() {
       // 同じ dateKey の複数履歴は、その日の最初の実施だけを代表にします。継続日数・スタンプ・当日完了判定がこの結果を共有します。
       const dailyRecords = new Map();
@@ -1993,10 +2022,13 @@
           return !specialKeys.has(dateKey) && !isCheatDay(dateKey);
         })
         .map((item) => ({
-          kind: "regular",
+          kind: item.correctionMark ? "correction" : "regular",
           dateKey: getRecordDateKey(item),
           completedAt: item.completedAt,
-          title: formatDate(item.completedAt)
+          mark: item.correctionMark || "",
+          label: item.correctionLabel || "",
+          tone: item.correctionTone || "",
+          title: item.correctionLabel ? `${item.dateKey} ${item.correctionLabel}` : formatDate(item.completedAt)
         }));
 
       const defaultItems = defaultRegularStamps
@@ -2026,7 +2058,7 @@
       }));
 
       const cheatItems = getCheatDayStamps(dailyHistory);
-      const kindOrder = { warning: 0, cheat: 1, regular: 2, default: 3 };
+      const kindOrder = { warning: 0, cheat: 1, correction: 2, regular: 3, default: 4 };
 
       return [...regularItems, ...defaultItems, ...warningItems, ...cheatItems].sort((a, b) => {
         const keyDiff = b.dateKey.localeCompare(a.dateKey);
@@ -2040,7 +2072,7 @@
       // ホームの主ボタンを「マインドセット」から「カレンダーを開く」へ切り替える判定です。日付境界は todayKey() に依存します。
       const key = todayKey();
       return getDailyHistory().some((item) => {
-        return getRecordDateKey(item) === key;
+        return getRecordDateKey(item) === key && isCompletionHistoryRecord(item);
       });
     }
 
@@ -2188,6 +2220,12 @@
       return `${year}年${month}月`;
     }
 
+    function hasAnyStampForDate(dateKey) {
+      if (getSpecialStampKeys().has(dateKey)) return true;
+      if (defaultRegularStamps.some((stamp) => stamp.dateKey === dateKey)) return true;
+      return getDailyHistory().some((item) => getRecordDateKey(item) === dateKey);
+    }
+
     function formatStampTime(isoString) {
       const date = new Date(isoString);
       if (Number.isNaN(date.getTime())) return "--:--";
@@ -2204,7 +2242,8 @@
         return `<div class="empty-state">記録はまだありません。</div>`;
       }
 
-      const streakKeys = getCurrentStreakKeys(getDailyHistory());
+      const streakKeys = getCurrentStreakKeys(getDailyHistory().filter(isCompletionHistoryRecord));
+      const currentMonthKey = getStampMonthKey(todayKey());
       const monthGroups = [];
       const monthMap = new Map();
       history.forEach((item) => {
@@ -2222,13 +2261,15 @@
         const isWarning = item.kind === "warning";
         const isCheat = item.kind === "cheat";
         const isDefault = item.kind === "default";
-        const isSpecial = isWarning || isCheat;
-        const isCurrent = !isSpecial && !isDefault && streakKeys.has(item.dateKey);
-        const toneClass = isWarning ? ` is-${item.tone || "warning"}` : isCheat ? " is-cheat" : "";
+        const isCorrection = item.kind === "correction";
+        const isCrossCorrection = isCorrection && item.mark === "×";
+        const usesDateKey = isWarning || isCheat || isDefault || isCorrection;
+        const isCurrent = !isWarning && !isCheat && !isDefault && !isCrossCorrection && streakKeys.has(item.dateKey);
+        const toneClass = isWarning ? ` is-${item.tone || "warning"}` : isCheat ? " is-cheat" : isCorrection && item.tone ? ` is-${escapeHTML(item.tone)}` : "";
         const shapeClass = item.shape ? ` is-${escapeHTML(item.shape)}` : "";
         const clickableClass = (isWarning && item.message) ? " is-clickable" : "";
         const actionAttr = clickableClass ? ` data-action="show-special-message" data-id="${escapeHTML(item.id || item.dateKey)}"` : "";
-        const dateParts = (isSpecial || isDefault) ? formatStampDateKey(item.dateKey) : formatStampDate(item.completedAt);
+        const dateParts = usesDateKey ? formatStampDateKey(item.dateKey) : formatStampDate(item.completedAt);
         const dateLabel = item.dateLabel || dateParts.date;
         const subLabelClass = item.subLabel
           ? `${item.subTone ? ` is-${escapeHTML(item.subTone)}` : ""}${item.subLabel === "次 死刑" ? " is-pulse" : ""}`
@@ -2236,12 +2277,13 @@
         const memoClass = item.memoTone ? ` is-${escapeHTML(item.memoTone)}` : "";
         const warningContent = `<span class="stamp-mark">${escapeHTML(item.mark)}</span><span class="stamp-label-line"><span class="stamp-label">${escapeHTML(item.label)}</span>${item.metaLabel ? `<span class="stamp-label-meta">${escapeHTML(item.metaLabel)}</span>` : ""}</span><span class="stamp-sub-label${subLabelClass}"${item.subLabel ? "" : ' aria-hidden="true"'}>${escapeHTML(item.subLabel || "")}</span>${item.memo ? `<span class="stamp-note${memoClass}">${escapeHTML(item.memo)}</span>` : ""}`;
         const cheatContent = `<span class="stamp-cheat-mark">${escapeHTML(item.mark)}</span><span class="stamp-cheat-label">${escapeHTML(item.label)}</span>`;
+        const correctionContent = `<span class="stamp-mark">${escapeHTML(item.mark)}</span><span class="stamp-label">${escapeHTML(item.label)}</span>`;
         return `
           <div class="stamp${isCurrent ? " is-current" : ""}${toneClass}${shapeClass}${clickableClass}" title="${escapeHTML(item.title)}"${actionAttr}>
             <span class="stamp-inner ${isCheat ? "is-cheat" : isWarning ? "is-warning" : "is-regular"}">
               <span class="stamp-year">${escapeHTML(dateParts.year)}</span>
               <span class="stamp-date">${escapeHTML(dateLabel)}</span>
-              ${isCheat ? cheatContent : isWarning ? warningContent : isDefault ? "" : `<span class="stamp-time">${escapeHTML(formatStampTime(item.completedAt))}</span>`}
+              ${isCheat ? cheatContent : isWarning ? warningContent : isCorrection ? correctionContent : isDefault ? "" : `<span class="stamp-time">${escapeHTML(formatStampTime(item.completedAt))}</span>`}
             </span>
           </div>
         `;
@@ -2251,10 +2293,9 @@
         <div class="stamp-month-list" aria-label="記録スタンプ">
           ${monthGroups.map((group) => `
             <section class="stamp-month-group" aria-label="${escapeHTML(formatStampMonthLabel(group.monthKey))}">
-              <h3 class="stamp-month-title">${escapeHTML(formatStampMonthLabel(group.monthKey))}</h3>
-              <div class="stamp-grid">
-                ${group.items.map(renderStampItem).join("")}
-              </div>
+              ${group.monthKey === currentMonthKey || state.expandedStampMonths.has(group.monthKey)
+                ? `<h3 class="stamp-month-title">${escapeHTML(formatStampMonthLabel(group.monthKey))}</h3><div class="stamp-grid">${group.items.map(renderStampItem).join("")}</div>`
+                : `<button class="stamp-month-button" type="button" data-action="expand-stamp-month" data-month="${escapeHTML(group.monthKey)}">${escapeHTML(formatStampMonthLabel(group.monthKey))}</button>`}
             </section>
           `).join("")}
         </div>
@@ -2302,7 +2343,7 @@
     }
     function calculateStreak() {
       // ヘッダー表示用の継続日数です。特別スタンプは実施履歴ではないため除外します。
-      const history = getDailyHistory().filter((item) => !getSpecialStampKeys().has(getRecordDateKey(item)));
+      const history = getDailyHistory().filter((item) => !getSpecialStampKeys().has(getRecordDateKey(item)) && isCompletionHistoryRecord(item));
       if (history.length === 0) return 0;
 
       const uniqueKeys = [...new Set(history.map(getRecordDateKey))].sort().reverse();
@@ -2363,13 +2404,14 @@
     }
 
     function renderSettings() {
-      // 設定画面は履歴書き出しと外部 BGM 動画リンクだけです。認証リセット action は実装済みですが現在 UI には出していません。
+      // 設定画面は履歴書き出し、前日補完、外部 BGM 動画リンクだけです。認証リセット action は実装済みですが現在 UI には出していません。
       renderShell(`
         <section class="settings-panel">
           <h2 class="section-title">データ管理</h2>
           <div class="stack">
             <p class="section-copy">スタンプ履歴（実施日時）をテキスト形式で書き出し、クリップボードにコピーします。</p>
             <button class="primary-button" type="button" data-action="backup-data">履歴をテキストで保存</button>
+            <button class="secondary-button" type="button" data-action="repair-yesterday">前日の記入漏れ修正</button>
             <button class="secondary-button" type="button" data-action="open-bgm-video-url">BGMの動画を再生</button>
             <hr style="border: 0; border-top: 1px solid var(--line); margin: 15px 0;">
             <button class="secondary-button" type="button" data-action="go" data-view="home">戻る</button>
@@ -2489,7 +2531,6 @@
           <div class="hero-content">
             <div class="completion-mark" aria-hidden="true">✓</div>
             <h2 class="page-title">罪を償え。</h2>
-            <button class="primary-button" type="button" data-action="show-special-message" data-id="2026-04-29" data-announce-cheat-day="true">インプット</button>
           </div>
           <img class="hero-image switchable-image${getFocusImageClass()}" src="${getFocusImage()}" alt="切り替え可能な写真" data-action="toggle-image">
         </section>
@@ -2544,6 +2585,7 @@
         state.view = "complete";
         state.transitioning = false;
         render();
+        await showPostMindsetMessage();
         return;
       }
 
@@ -2555,6 +2597,18 @@
       state.activeIndex = 0;
       state.confirmedCards = [];
       state.view = "deck";
+      render();
+    }
+
+    async function showPostMindsetMessage() {
+      const stamp = findSpecialStamp("2026-04-29");
+      if (stamp && stamp.message) {
+        await showTypewriterModal(stamp.title, stamp.message, "インプット");
+        if (isCheatDay()) {
+          await showCheatDayAnnouncement();
+        }
+      }
+      state.view = "home";
       render();
     }
 
@@ -2619,6 +2673,48 @@
         };
         modalRoot.addEventListener("click", onClick);
       });
+    }
+
+    function addYesterdayCorrection(value) {
+      const dateKey = addDaysToKey(todayKey(), -1);
+      if (hasAnyStampForDate(dateKey)) return false;
+
+      const isCross = value === "cross";
+      const label = isCross ? "バツ" : "丸";
+      const completedAtDate = dateKeyToDate(dateKey);
+      completedAtDate.setHours(12, 0, 0, 0);
+      const history = getHistory();
+      history.unshift({
+        id: `${Date.now()}-yesterday-${value}`,
+        mode: `前日修正（${label}）`,
+        count: 0,
+        completedAt: completedAtDate.toISOString(),
+        dateKey,
+        correctionMark: isCross ? "×" : "○",
+        correctionLabel: label,
+        correctionTone: isCross ? "warning" : "",
+        cards: []
+      });
+      return saveJSON(STORAGE_KEYS.history, history.slice(0, 180));
+    }
+
+    async function repairYesterday() {
+      const dateKey = addDaysToKey(todayKey(), -1);
+      if (hasAnyStampForDate(dateKey)) {
+        await showModal("前日の記入漏れ修正", "昨日の記録は存在します");
+        return;
+      }
+
+      const result = await showModal("前日の記入漏れ修正", "前日分として追加する記録を選んでください。", [
+        { label: "丸", value: "circle", style: "primary-button" },
+        { label: "バツ", value: "cross", style: "danger-button" }
+      ]);
+
+      if (result !== "circle" && result !== "cross") return;
+      if (addYesterdayCorrection(result)) {
+        await showModal("記録しました", "前日分の記録を追加しました。");
+        render();
+      }
     }
 
     async function showTypewriterModal(title, text, buttonLabel = "閉じる") {
@@ -2776,6 +2872,12 @@
         render();
       }
 
+      if (action === "expand-stamp-month") {
+        const monthKey = actionTarget.dataset.month;
+        if (monthKey) state.expandedStampMonths.add(monthKey);
+        render();
+      }
+
       if (action === "toggle-image") {
         await toggleFocusImage();
       }
@@ -2804,6 +2906,10 @@
 
       if (action === "backup-data") {
         backupData();
+      }
+
+      if (action === "repair-yesterday") {
+        await repairYesterday();
       }
 
       if (action === "show-special-message") {
