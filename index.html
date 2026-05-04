@@ -1,4 +1,14 @@
 <!doctype html>
+<!--
+  開発者向け保守メモ（2026年4月27日時点 / 2026年5月4日追記）
+  このアプリは単一の index.html に画面構造・CSS・JavaScript を集約した静的ツールです。
+  HTML は描画先ルートだけを持ち、画面 DOM は render 系関数が innerHTML で再生成します。
+  CSS は同一ファイル内のクラス名に強く依存し、JavaScript は data-action / data-form によるイベント委譲で操作を受けます。
+  sw.js は BGM 音声だけをキャッシュし、manifest.webmanifest と画像・音声ファイルは PWA 表示と画面素材として参照されます。
+  保守時は「保存キー」「日付キー（YYYY-MM-DD のローカル日付）」「data-action 名」「スタンプ種別」と CSS クラスの対応を崩さないでください。
+  作業前は 1) render() の画面遷移、2) STORAGE_KEYS と移行処理、3) getVisibleStampHistory() の合成順、4) 該当 CSS クラスを確認してください。
+  変更後は最低限、初回ロック解除、ホーム初期表示、カード完了、同日二重記録防止、スタンプ表示、画像切替、履歴書き出し、BGM 再生を確認してください。
+-->
 <html lang="ja">
 <head>
   <meta charset="utf-8">
@@ -7,13 +17,20 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="西川巧真専用">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- PWA/ホーム画面用の資産参照です。PNG 名や manifest の start_url/scope を変える場合は実配信パスと Service Worker 登録パスも確認してください。 -->
   <link rel="icon" type="image/png" sizes="192x192" href="app-icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="app-icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="app-icon-180.png">
   <link rel="manifest" href="manifest.webmanifest">
   <title>西川巧真専用</title>
   <style>
+    /*
+      保守メモ: CSS は index.html 内の描画テンプレートと密結合しています。
+      クラス名を変える場合は renderShell/renderLock/renderHome/renderStampHistory/showModal 系の文字列も同時に確認してください。
+      印刷専用の @media print は現時点ではありません。追加する場合は単一ルート再描画、モーダル固定配置、スクロール領域の高さ指定を必ず確認してください。
+    */
     :root {
+      /* テーマ色は JS の applyRandomTheme() で起動ごとに上書きされます。変数名はボタン、スタンプ、認証表示で共有しています。 */
       color-scheme: light;
       --bg: #f6f8f7;
       --paper: #ffffff;
@@ -90,6 +107,7 @@
     }
 
     .app {
+      /* すべての通常画面は #app 配下に再描画されます。幅を変えるとロック画面、ホーム、カード、カレンダー iframe の全体に波及します。 */
       width: min(100%, 720px);
       min-height: 100dvh;
       margin: 0 auto;
@@ -210,6 +228,7 @@
     }
 
     .switchable-image {
+      /* data-action="toggle-image" と同期する共通画像クラスです。ロック画面とホーム/完了画面の写真を同時に切り替えます。 */
       cursor: pointer;
       transition: transform 160ms var(--ease), filter 160ms var(--ease), opacity 220ms var(--ease);
       touch-action: manipulation;
@@ -427,6 +446,7 @@
     }
 
     .auth-stage {
+      /* 認証は AUTH_SEQUENCE の順番を視覚化する 3 段階表示です。段数を変える場合は AUTH_SEQUENCE とヒント文も合わせて確認してください。 */
       width: fit-content;
       max-width: 100%;
       margin: 0 auto;
@@ -647,7 +667,45 @@
       gap: 9px;
     }
 
+    .stamp-month-list {
+      /* renderStampHistory() が月ごとに生成する外側スクロール領域です。高さを変えるとホーム画面の初期表示量に影響します。 */
+      display: grid;
+      gap: 14px;
+      max-height: 430px;
+      overflow-y: auto;
+      padding: 2px 2px 8px;
+      scrollbar-width: thin;
+    }
+
+    .stamp-month-group {
+      display: grid;
+      gap: 10px;
+      padding: 12px 10px 14px;
+      border: 1px solid rgba(17, 24, 23, 0.08);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(236, 242, 240, 0.86)),
+        rgba(246, 248, 247, 0.88);
+      box-shadow: 0 10px 26px rgba(22, 40, 36, 0.07);
+    }
+
+    .stamp-month-title {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+      font-weight: 900;
+      line-height: 1.35;
+      text-align: left;
+    }
+
+    .stamp-month-group .stamp-grid {
+      max-height: none;
+      overflow: visible;
+      padding: 0;
+    }
+
     .stamp-grid {
+      /* スタンプは 88px の正方形を前提に、specialStamps の tone/shape と renderStampHistory() の kind で見た目を切り替えます。 */
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
       grid-auto-flow: dense;
@@ -750,11 +808,16 @@
     }
 
     .stamp.is-wide {
+      /* 2026-04-29/30 の横長スタンプ専用。shape: "wide" とセットで使われるため、通常スタンプへ流用しないでください。 */
       grid-column: span 2;
       width: min(204px, 100%);
       min-height: 86px;
       aspect-ratio: 2.45 / 1;
-      border-radius: 7px;
+      border-radius: 999px;
+    }
+
+    .stamp.is-wide::after {
+      border-radius: 999px;
     }
 
     .stamp.is-wide .stamp-inner.is-warning {
@@ -1068,6 +1131,7 @@
     }
 
     .calendar-frame {
+      /* 外部カレンダーは iframe で表示します。URL は CALENDAR_URL、遷移は open-calendar/go アクション側と連動します。 */
       width: 100%;
       min-height: calc(100dvh - 188px);
       border: 1px solid rgba(17, 24, 23, 0.10);
@@ -1077,6 +1141,7 @@
     }
 
     .modal-root {
+      /* モーダルは showModal/showCheatDayAnnouncement/showTypewriterModal が #modalRoot を直接差し替えます。z-index はタップ演出より低く、通常画面より高い前提です。 */
       position: fixed;
       inset: 0;
       z-index: 10;
@@ -1093,6 +1158,7 @@
     }
 
     .fx-root {
+      /* タップ演出専用レイヤーです。pointer-events: none を外すとアプリ本体やモーダルのクリックを遮ります。 */
       position: fixed;
       inset: 0;
       z-index: 25;
@@ -1319,12 +1385,23 @@
   </style>
 </head>
 <body>
+  <!-- #app は通常画面の唯一の描画先です。認証前後の画面も含め、render 系関数がこの中身を丸ごと差し替えます。 -->
   <div id="app" class="app" aria-live="polite"></div>
+  <!-- #modalRoot は確認・解禁日・長文タイプライターの共有モーダル領域です。通常画面の DOM とは分離して保ちます。 -->
   <div id="modalRoot" class="modal-root" role="presentation"></div>
+  <!-- #fxRoot はタップ演出だけを受け持つ固定レイヤーです。UI 操作を遮らないことが不変条件です。 -->
   <div id="fxRoot" class="fx-root" aria-hidden="true"></div>
+  <!-- bgm.mp3 は autoplay だけに頼らず initBgm() と sw.js のキャッシュで再生安定性を補っています。 -->
   <audio id="bgm" src="bgm.mp3" autoplay loop preload="auto"></audio>
 
     <script>
+    /*
+      JavaScript 保守メモ:
+      - state.view と render() が画面遷移の中心です。各画面は #app の innerHTML 差し替えで再生成されます。
+      - クリック操作は末尾の app.addEventListener("click", ...) に集約されています。新しいボタンは data-action を追加し、同じ名前を分岐に追加してください。
+      - localStorage のキー名と dateKey の形式は既存ユーザーの保存データ互換に直結します。変更する場合は移行処理を先に用意してください。
+      - スタンプ表示は履歴、既定スタンプ、特別スタンプ、解禁日スタンプを getVisibleStampHistory() で合成します。片方だけ直すと表示順や重複判定が崩れます。
+    */
     const THEMES = [
       { main: "#007a72", dark: "#005f59", soft: "#dff4f0", grad: "#116f55", rgb: "0, 122, 114", softRgb: "223, 244, 240" },
       { main: "#d32f2f", dark: "#9a0007", soft: "#ffebee", grad: "#b71c1c", rgb: "211, 47, 47", softRgb: "255, 235, 238" },
@@ -1334,6 +1411,7 @@
       { main: "#c2185b", dark: "#8c0032", soft: "#fce4ec", grad: "#ad1457", rgb: "194, 24, 91", softRgb: "252, 228, 236" }
     ];
     const applyRandomTheme = function() {
+      /* 起動ごとの視覚変化だけを担います。保存していないため、テーマ色を仕様化する場合は state/localStorage の扱いを新設する必要があります。 */
       const theme = THEMES[Math.floor(Math.random() * THEMES.length)];
       const root = document.documentElement;
       root.style.setProperty('--teal', theme.main);
@@ -1345,6 +1423,7 @@
     };
     applyRandomTheme();
     const initBgm = function() {
+      /* ブラウザの自動再生制限を避けるため、初回表示・入力・フォーカス復帰で再生を試みます。bgm.mp3 のキャッシュは sw.js 側です。 */
       const bgm = document.getElementById('bgm');
       if (!bgm) return;
       
@@ -1385,16 +1464,17 @@
       });
     };
     document.addEventListener('DOMContentLoaded', initBgm);
-    // 初期実行
+    // 初期実行。DOMContentLoaded 前後のどちらでも BGM 再生を試すため、initBgm() は内部で要素存在を確認します。
     initBgm();
 
-    // サービスワーカーを登録してBGMをキャッシュする
+    // サービスワーカーを登録してBGMをキャッシュする。sw.js は bgm.mp3 以外を横取りしない設計です。
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('sw.js').catch(function(){});
       });
     }
 
+    // 認証・外部リンク・解禁日の仕様値。AUTH_SEQUENCE は順番一致が前提で、ローカル端末に認証済みフラグを保存します。
     const AUTH_SEQUENCE = ["0418", "0429", "0415"];
     const CALENDAR_URL = "https://tatsuko0429.github.io/yome-senyo-tool/";
     const CHEAT_DAY_URL = "https://www.notion.so/35287ce6d69280f5b9def969f515f810?source=copy_link";
@@ -1402,6 +1482,7 @@
     const CHEAT_DAY_ORIGIN_KEY = "2026-04-30";
     const CHEAT_DAY_INTERVAL_DAYS = 7;
 
+    // 保存キーは既存データの契約です。名称変更は履歴・認証・画像選択を失うため、必ず移行を追加してください。
     const STORAGE_KEYS = {
       authenticated: "personal_mindset_authenticated_v3",
       cards: "personal_mindset_cards_v5",
@@ -1409,10 +1490,12 @@
       imageIndex: "personal_mindset_image_index_v1"
     };
 
+    // 旧履歴キーは migrateHistory() で一度だけ現行形式へ寄せます。削除すると過去ユーザーの記録復元ができません。
     const LEGACY_KEYS = {
       history: "personal_mindfulness_history_v1"
     };
 
+    // 初期カードは getCards()/normalizeCards() のフォールバックです。保存済みカードが壊れていてもこの内容で運用継続します。
     const defaultCards = [
       {
         type: "2026年4月18日の夜",
@@ -1445,8 +1528,10 @@
       "正すべきものから、目を逸らさない。"
     ];
 
+    // showTypewriterModal() はこの文字列内の <u>...</u> だけを特別扱いします。任意 HTML を入れる設計ではありません。
     const DEATH_PENALTY_MESSAGE = "4月28日、食事会の後、妻から許可されていないにもかかわらず、また妻が嫌がるということにも気づかず、勝手にパパ友さんを家に上げた挙げ句、お酒を飲み、お風呂も許可する始末。その後、図々しくも、パパ友さんの家に上がり込み、みんなでお酒を飲み、僕以外のパパ友さんは、区切りのいいタイミングで家に帰ったにも関わらず、自分は子供が寝てしまっていたことを言い訳に、そのまま滞在した挙げ句、ソファーをお借りして、4月29日、朝9時頃まで寝てしまう。自分が寝てしまうことで、相手の奥さんが帰ってきづらいということにも気づかず、相手側の奥さんに、オールで安心して寝る場所も与えられず、また、先に起きた子供たちと一緒に公園に行ってくださり、寝る暇もないまま、子供を見させてしまうという始末。\n\n俺はこれから少しずつメンタルも回復し、<u>ポジティブになるかもしれないが、もう調子に乗るな。どれだけ回復して元気になったとしても、このメッセージで思い出せ。何もするな。自慰行為も自粛しろ。お酒は嗜む程度にしろ。飲みすぎるな。自分を正常で正しい人間だと思うな。常に間違っている。選択もすべて愚かだ。俺は病気だ。俺は病気だ。俺は病気だ。</u>自覚しろ。滞りなく生きて死ね。";
 
+    // 特別スタンプは履歴とは別に常時表示される運用上の固定記録です。dateKeys は重複排除、dateKey は並び順と代表日として使われます。
     const specialStamps = [
       {
         id: "warning-2026-04-18",
@@ -1501,7 +1586,7 @@
         dateLabel: "4/29・4/30",
         label: "死刑",
         mark: "✕",
-        subLabel: "自慰",
+        subLabel: "自慰 2回",
         subTone: "plain",
         memo: "死刑",
         memoTone: "death",
@@ -1512,6 +1597,17 @@
       }
     ];
 
+    // 既定スタンプは、localStorage に履歴がない日でも過去実施日として見せるための固定表示です。実データではないため addHistory() には入れません。
+    const defaultRegularStamps = [
+      { dateKey: "2026-04-19", title: "2026年4月19日。既定スタンプ" },
+      { dateKey: "2026-04-20", title: "2026年4月20日。既定スタンプ" },
+      { dateKey: "2026-04-21", title: "2026年4月21日。既定スタンプ" },
+      { dateKey: "2026-04-24", title: "2026年4月24日。既定スタンプ" },
+      { dateKey: "2026-04-25", title: "2026年4月25日。既定スタンプ" },
+      { dateKey: "2026-04-28", title: "2026年4月28日。既定スタンプ" }
+    ];
+
+    // 写真ファイル名は manifest ではなく画面表示側の依存です。追加・削除時は getInitialImageIndex() の範囲チェックも確認してください。
     const focusImages = [
       "mindset-photo.jpeg",
       "mindset-photo-alt.jpeg"
@@ -1523,6 +1619,7 @@
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let audioContext = null;
 
+    // 画面状態はメモリ上だけに保持し、永続化するのは認証・カード・履歴・画像選択だけです。
     const state = {
       authenticated: getInitialAuth(),
       view: "home",
@@ -1536,10 +1633,12 @@
     };
 
     function getInitialAuth() {
+      // 認証済みかどうかは端末ローカルだけで判断します。サーバー検証はなく、値は文字列 "true" 固定です。
       return localStorage.getItem(STORAGE_KEYS.authenticated) === "true";
     }
 
     function getInitialImageIndex() {
+      // 保存済み画像番号が現在の配列外になった場合は 0 に戻します。画像削除時の最低限の保険です。
       const saved = Number(localStorage.getItem(STORAGE_KEYS.imageIndex));
       if (Number.isInteger(saved) && saved >= 0 && saved < focusImages.length) {
         return saved;
@@ -1561,6 +1660,7 @@
     }
 
     function syncRenderedFocusImages() {
+      // 画面再描画なしで既存の写真だけ差し替えるための同期処理です。switchable-image を付け忘れると切り替え対象から外れます。
       const source = getFocusImage();
       const isFamilyPhoto = state.imageIndex === 1;
       getSwitchableImages().forEach((image) => {
@@ -1573,6 +1673,7 @@
     }
 
     async function toggleFocusImage() {
+      // 二重タップ中の競合を imageTransitioning で防ぎます。保存してから DOM 同期する順番を変えると再読み込み後の表示とずれる可能性があります。
       if (state.imageTransitioning) return;
 
       const images = getSwitchableImages();
@@ -1606,6 +1707,7 @@
     }
 
     function loadJSON(key, fallback) {
+      // localStorage の破損や手動編集に備え、読み込み失敗時は表示継続を優先します。
       try {
         const raw = localStorage.getItem(key);
         return raw ? JSON.parse(raw) : fallback;
@@ -1616,6 +1718,7 @@
     }
 
     function saveJSON(key, value) {
+      // 保存失敗はユーザー操作を止めずモーダル通知します。呼び出し側で true/false を使っていない箇所があるため副作用を増やさないでください。
       try {
         localStorage.setItem(key, JSON.stringify(value));
         return true;
@@ -1626,6 +1729,7 @@
     }
 
     function migrateHistory() {
+      // 旧キーから現行履歴へ移行します。現行配列が存在する場合は中身の妥当性に関係なく既存データを優先します。
       const current = loadJSON(STORAGE_KEYS.history, null);
       if (Array.isArray(current)) return current;
 
@@ -1648,6 +1752,7 @@
     }
 
     function normalizeCards(cards) {
+      // 保存済みカード編集を許容しつつ、表示に必須の text がない項目は捨てます。空配列時は defaultCards に戻します。
       if (!Array.isArray(cards)) return defaultCards;
       const normalized = cards
         .filter((item) => item && typeof item.text === "string" && item.text.trim())
@@ -1660,6 +1765,7 @@
     }
 
     function getCards() {
+      // 初回起動時に defaultCards を保存して以後の編集余地を残します。保存キーのバージョン変更時は移行要否を確認してください。
       const saved = loadJSON(STORAGE_KEYS.cards, null);
       if (Array.isArray(saved)) return normalizeCards(saved);
       saveJSON(STORAGE_KEYS.cards, defaultCards);
@@ -1695,6 +1801,7 @@
     }
 
     function getAudioContext() {
+      // タップ音はユーザー操作後でないと再開できない環境があるため、呼び出しごとに suspended を解除します。
       const AudioCtor = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtor) return null;
       if (!audioContext) {
@@ -1790,6 +1897,7 @@
     }
 
     function handlePointerFeedback(event) {
+      // app と modalRoot の両方に付けています。演出を消す場合も、ボタン操作の本処理とは分離している点を維持してください。
       if (!event || event.button > 0) return;
       if (typeof event.clientX === "number" && typeof event.clientY === "number") {
         createTapBurst(event.clientX, event.clientY);
@@ -1806,14 +1914,17 @@
     }
 
     function getHistory() {
+      // 履歴取得時に必ず移行を通す設計です。直接 loadJSON(STORAGE_KEYS.history) を増やすと旧データ対応が抜けます。
       return migrateHistory();
     }
 
     function getRecordDateKey(record) {
+      // dateKey は日次重複判定の主キーです。古い履歴は completedAt からローカル日付で補完します。
       return record.dateKey || dateKeyFromISO(record.completedAt);
     }
 
     function getDailyHistory() {
+      // 同じ dateKey の複数履歴は、その日の最初の実施だけを代表にします。継続日数・スタンプ・当日完了判定がこの結果を共有します。
       const dailyRecords = new Map();
       getHistory().forEach((record) => {
         if (!record || !record.completedAt) return;
@@ -1834,10 +1945,12 @@
     }
 
     function getSpecialStampKeys() {
+      // specialStamps の dateKeys は複数日を 1 スタンプで覆うための除外キーです。通常履歴・既定スタンプとの重複排除に使います。
       return new Set(specialStamps.flatMap((stamp) => stamp.dateKeys || [stamp.dateKey]));
     }
 
     function isCheatDay(dateKey = todayKey()) {
+      // 解禁日は CHEAT_DAY_ORIGIN_KEY から 7 日ごとのローカル日付で判定します。時刻や UTC では判定しません。
       const daysFromOrigin = daysBetweenKeys(CHEAT_DAY_ORIGIN_KEY, dateKey);
       return daysFromOrigin >= CHEAT_DAY_INTERVAL_DAYS && daysFromOrigin % CHEAT_DAY_INTERVAL_DAYS === 0;
     }
@@ -1870,8 +1983,10 @@
     }
 
     function getVisibleStampHistory() {
+      // 表示用スタンプの合成点です。履歴・既定・特別・解禁日の追加条件や並び順を変える場合はここを中心に確認してください。
       const specialKeys = getSpecialStampKeys();
       const dailyHistory = getDailyHistory();
+      const historyKeys = new Set(dailyHistory.map(getRecordDateKey));
       const regularItems = dailyHistory
         .filter((item) => {
           const dateKey = getRecordDateKey(item);
@@ -1882,6 +1997,14 @@
           dateKey: getRecordDateKey(item),
           completedAt: item.completedAt,
           title: formatDate(item.completedAt)
+        }));
+
+      const defaultItems = defaultRegularStamps
+        .filter((stamp) => !historyKeys.has(stamp.dateKey) && !specialKeys.has(stamp.dateKey) && !isCheatDay(stamp.dateKey))
+        .map((stamp) => ({
+          kind: "default",
+          dateKey: stamp.dateKey,
+          title: stamp.title
         }));
 
       const warningItems = specialStamps.map((stamp) => ({
@@ -1903,9 +2026,9 @@
       }));
 
       const cheatItems = getCheatDayStamps(dailyHistory);
-      const kindOrder = { warning: 0, cheat: 1, regular: 2 };
+      const kindOrder = { warning: 0, cheat: 1, regular: 2, default: 3 };
 
-      return [...regularItems, ...warningItems, ...cheatItems].sort((a, b) => {
+      return [...regularItems, ...defaultItems, ...warningItems, ...cheatItems].sort((a, b) => {
         const keyDiff = b.dateKey.localeCompare(a.dateKey);
         if (keyDiff !== 0) return keyDiff;
         if (a.kind !== b.kind) return (kindOrder[a.kind] ?? 9) - (kindOrder[b.kind] ?? 9);
@@ -1914,6 +2037,7 @@
     }
 
     function hasCompletedMindsetToday() {
+      // ホームの主ボタンを「マインドセット」から「カレンダーを開く」へ切り替える判定です。日付境界は todayKey() に依存します。
       const key = todayKey();
       return getDailyHistory().some((item) => {
         return getRecordDateKey(item) === key;
@@ -1921,6 +2045,7 @@
     }
 
     function addHistory(cards) {
+      // 1 日 1 件だけ保存する不変条件です。完了画面に進んでも同日二重実行では履歴を増やしません。
       const history = getHistory();
       const key = todayKey();
       const alreadyRecorded = history.some((item) => getRecordDateKey(item) === key);
@@ -1938,6 +2063,7 @@
     }
 
     function escapeHTML(value) {
+      // innerHTML テンプレートへ差し込む値は原則ここを通します。formatMultilineText と typewriter 以外で生 HTML を増やさないでください。
       return String(value)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
@@ -1960,6 +2086,7 @@
     }
 
     function todayKey() {
+      // アプリ内の日付はブラウザのローカルタイムゾーン基準です。UTC 変換へ変えると当日判定・継続日数・解禁日がずれます。
       const now = new Date();
       return makeDateKey(now);
     }
@@ -1971,6 +2098,7 @@
     }
 
     function makeDateKey(date) {
+      // dateKey は YYYY-MM-DD 固定です。文字列ソートで新しい日付が先に来る前提が複数箇所にあります。
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
@@ -1989,12 +2117,14 @@
     }
 
     function daysBetweenKeys(fromKey, toKey) {
+      // 日付キー同士の差分専用です。時刻つき Date を渡すと DST や時差で意図しない丸めが起きます。
       const from = dateKeyToDate(fromKey);
       const to = dateKeyToDate(toKey);
       return Math.round((to - from) / 86400000);
     }
 
     function getCurrentStreakKeys(history) {
+      // 現在継続中の stamp を強調するためのキー集合です。今日または昨日が最新でない場合は継続扱いにしません。
       const uniqueKeys = [...new Set(history.map(getRecordDateKey))]
         .filter(Boolean)
         .sort()
@@ -2046,6 +2176,18 @@
       return getStampDateParts(date);
     }
 
+    function getStampMonthKey(dateKey) {
+      // 月別グループ化は dateKey 文字列の先頭 7 桁に依存します。dateKey 形式を変える場合はここも更新してください。
+      const value = String(dateKey || "");
+      return /^\d{4}-\d{2}/.test(value) ? value.slice(0, 7) : "unknown";
+    }
+
+    function formatStampMonthLabel(monthKey) {
+      const [year, month] = String(monthKey || "").split("-").map(Number);
+      if (!Number.isInteger(year) || !Number.isInteger(month)) return "月不明";
+      return `${year}年${month}月`;
+    }
+
     function formatStampTime(isoString) {
       const date = new Date(isoString);
       if (Number.isNaN(date.getTime())) return "--:--";
@@ -2056,41 +2198,65 @@
     }
 
     function renderStampHistory() {
+      // ホームの「最近の記録」全体を返します。CSS の stamp-month-list/stamp-grid/stamp tone とセットで保守してください。
       const history = getVisibleStampHistory();
       if (history.length === 0) {
         return `<div class="empty-state">記録はまだありません。</div>`;
       }
 
       const streakKeys = getCurrentStreakKeys(getDailyHistory());
+      const monthGroups = [];
+      const monthMap = new Map();
+      history.forEach((item) => {
+        const monthKey = getStampMonthKey(item.dateKey);
+        if (!monthMap.has(monthKey)) {
+          const group = { monthKey, items: [] };
+          monthMap.set(monthKey, group);
+          monthGroups.push(group);
+        }
+        monthMap.get(monthKey).items.push(item);
+      });
+
+      const renderStampItem = (item) => {
+        // kind によって日付・時刻・ラベルの出し分けをしています。default は見た目だけの既定スタンプなので時刻を表示しません。
+        const isWarning = item.kind === "warning";
+        const isCheat = item.kind === "cheat";
+        const isDefault = item.kind === "default";
+        const isSpecial = isWarning || isCheat;
+        const isCurrent = !isSpecial && !isDefault && streakKeys.has(item.dateKey);
+        const toneClass = isWarning ? ` is-${item.tone || "warning"}` : isCheat ? " is-cheat" : "";
+        const shapeClass = item.shape ? ` is-${escapeHTML(item.shape)}` : "";
+        const clickableClass = (isWarning && item.message) ? " is-clickable" : "";
+        const actionAttr = clickableClass ? ` data-action="show-special-message" data-id="${escapeHTML(item.id || item.dateKey)}"` : "";
+        const dateParts = (isSpecial || isDefault) ? formatStampDateKey(item.dateKey) : formatStampDate(item.completedAt);
+        const dateLabel = item.dateLabel || dateParts.date;
+        const subLabelClass = item.subLabel
+          ? `${item.subTone ? ` is-${escapeHTML(item.subTone)}` : ""}${item.subLabel === "次 死刑" ? " is-pulse" : ""}`
+          : " is-placeholder";
+        const memoClass = item.memoTone ? ` is-${escapeHTML(item.memoTone)}` : "";
+        const warningContent = `<span class="stamp-mark">${escapeHTML(item.mark)}</span><span class="stamp-label-line"><span class="stamp-label">${escapeHTML(item.label)}</span>${item.metaLabel ? `<span class="stamp-label-meta">${escapeHTML(item.metaLabel)}</span>` : ""}</span><span class="stamp-sub-label${subLabelClass}"${item.subLabel ? "" : ' aria-hidden="true"'}>${escapeHTML(item.subLabel || "")}</span>${item.memo ? `<span class="stamp-note${memoClass}">${escapeHTML(item.memo)}</span>` : ""}`;
+        const cheatContent = `<span class="stamp-cheat-mark">${escapeHTML(item.mark)}</span><span class="stamp-cheat-label">${escapeHTML(item.label)}</span>`;
+        return `
+          <div class="stamp${isCurrent ? " is-current" : ""}${toneClass}${shapeClass}${clickableClass}" title="${escapeHTML(item.title)}"${actionAttr}>
+            <span class="stamp-inner ${isCheat ? "is-cheat" : isWarning ? "is-warning" : "is-regular"}">
+              <span class="stamp-year">${escapeHTML(dateParts.year)}</span>
+              <span class="stamp-date">${escapeHTML(dateLabel)}</span>
+              ${isCheat ? cheatContent : isWarning ? warningContent : isDefault ? "" : `<span class="stamp-time">${escapeHTML(formatStampTime(item.completedAt))}</span>`}
+            </span>
+          </div>
+        `;
+      };
+
       return `
-        <div class="stamp-grid" aria-label="記録スタンプ">
-          ${history.map((item) => {
-            const isWarning = item.kind === "warning";
-            const isCheat = item.kind === "cheat";
-            const isSpecial = isWarning || isCheat;
-            const isCurrent = !isSpecial && streakKeys.has(item.dateKey);
-            const toneClass = isWarning ? ` is-${item.tone || "warning"}` : isCheat ? " is-cheat" : "";
-            const shapeClass = item.shape ? ` is-${escapeHTML(item.shape)}` : "";
-            const clickableClass = (isWarning && item.message) ? " is-clickable" : "";
-            const actionAttr = clickableClass ? ` data-action="show-special-message" data-id="${escapeHTML(item.id || item.dateKey)}"` : "";
-            const dateParts = isSpecial ? formatStampDateKey(item.dateKey) : formatStampDate(item.completedAt);
-            const dateLabel = item.dateLabel || dateParts.date;
-            const subLabelClass = item.subLabel
-              ? `${item.subTone ? ` is-${escapeHTML(item.subTone)}` : ""}${item.subLabel === "次 死刑" ? " is-pulse" : ""}`
-              : " is-placeholder";
-            const memoClass = item.memoTone ? ` is-${escapeHTML(item.memoTone)}` : "";
-            const warningContent = `<span class="stamp-mark">${escapeHTML(item.mark)}</span><span class="stamp-label-line"><span class="stamp-label">${escapeHTML(item.label)}</span>${item.metaLabel ? `<span class="stamp-label-meta">${escapeHTML(item.metaLabel)}</span>` : ""}</span><span class="stamp-sub-label${subLabelClass}"${item.subLabel ? "" : ' aria-hidden="true"'}>${escapeHTML(item.subLabel || "")}</span>${item.memo ? `<span class="stamp-note${memoClass}">${escapeHTML(item.memo)}</span>` : ""}`;
-            const cheatContent = `<span class="stamp-cheat-mark">${escapeHTML(item.mark)}</span><span class="stamp-cheat-label">${escapeHTML(item.label)}</span>`;
-            return `
-              <div class="stamp${isCurrent ? " is-current" : ""}${toneClass}${shapeClass}${clickableClass}" title="${escapeHTML(item.title)}"${actionAttr}>
-                <span class="stamp-inner ${isCheat ? "is-cheat" : isWarning ? "is-warning" : "is-regular"}">
-                  <span class="stamp-year">${escapeHTML(dateParts.year)}</span>
-                  <span class="stamp-date">${escapeHTML(dateLabel)}</span>
-                  ${isCheat ? cheatContent : isWarning ? warningContent : `<span class="stamp-time">${escapeHTML(formatStampTime(item.completedAt))}</span>`}
-                </span>
+        <div class="stamp-month-list" aria-label="記録スタンプ">
+          ${monthGroups.map((group) => `
+            <section class="stamp-month-group" aria-label="${escapeHTML(formatStampMonthLabel(group.monthKey))}">
+              <h3 class="stamp-month-title">${escapeHTML(formatStampMonthLabel(group.monthKey))}</h3>
+              <div class="stamp-grid">
+                ${group.items.map(renderStampItem).join("")}
               </div>
-            `;
-          }).join("")}
+            </section>
+          `).join("")}
         </div>
       `;
     }
@@ -2101,6 +2267,7 @@
     }
 
     function backupData() {
+      // データ削除やファイル保存ではなく、履歴テキストをクリップボードへ書き出すだけです。保存対象は getHistory() の実履歴に限定します。
       const history = getHistory();
       if (history.length === 0) {
         showModal("記録なし", "保存されているスタンプの履歴がありません。");
@@ -2134,6 +2301,7 @@
       }
     }
     function calculateStreak() {
+      // ヘッダー表示用の継続日数です。特別スタンプは実施履歴ではないため除外します。
       const history = getDailyHistory().filter((item) => !getSpecialStampKeys().has(getRecordDateKey(item)));
       if (history.length === 0) return 0;
 
@@ -2159,6 +2327,7 @@
     }
 
     function render() {
+      // 画面描画の唯一の入口です。認証前は state.view に関係なくロック画面を表示します。
       if (!state.authenticated) {
         renderLock();
         return;
@@ -2172,6 +2341,7 @@
     }
 
     function renderShell(content) {
+      // 認証後画面の共通枠です。設定ボタン、継続日数、解禁日リンクはここで全画面に反映されます。
       const streak = calculateStreak();
       const cheatDayLink = isCheatDay()
         ? `<button class="icon-button cheat-day-link" type="button" data-action="open-cheat-day-url" title="解禁日ページを開く" aria-label="解禁日ページを開く">🔍</button>`
@@ -2193,6 +2363,7 @@
     }
 
     function renderSettings() {
+      // 設定画面は履歴書き出しと外部 BGM 動画リンクだけです。認証リセット action は実装済みですが現在 UI には出していません。
       renderShell(`
         <section class="settings-panel">
           <h2 class="section-title">データ管理</h2>
@@ -2208,6 +2379,7 @@
     }
 
     function renderLock() {
+      // ログイン画面は AUTH_SEQUENCE の進捗を state.unlockStep で表します。誤入力時は必ず 0 に戻す仕様です。
       const stageIndex = state.unlockStep;
       const steps = AUTH_SEQUENCE.map((_, index) => {
         const className = index < stageIndex
@@ -2245,6 +2417,7 @@
     }
 
     function renderHome() {
+      // 初期表示です。当日完了済みなら再実行ではなくカレンダー導線へ変える仕様を維持してください。
       const todayLabel = formatDate(new Date().toISOString(), "date");
       const completedToday = hasCompletedMindsetToday();
       const primaryAction = completedToday
@@ -2269,6 +2442,7 @@
     }
 
     function renderDeck() {
+      // マインドセット実行中のカード画面です。deck.length を前提に進捗率を出すため、getCards() は空配列を返さない設計です。
       const deck = getDeck();
       const card = deck[state.activeIndex] || deck[0];
       const progress = `${Math.round(((state.activeIndex + 1) / deck.length) * 100)}%`;
@@ -2295,6 +2469,7 @@
     }
 
     function renderComplete() {
+      // 完了画面では addHistory() 済みのカード要約を表示し、特別メッセージ確認後にホームへ戻します。
       const cards = state.confirmedCards.length ? state.confirmedCards : getDeck();
       const summary = cards
         .map((card, index) => `
@@ -2326,6 +2501,7 @@
     }
 
     function renderCalendar() {
+      // 外部カレンダーをアプリ内 iframe に閉じ込める画面です。別タブ遷移に変える場合はホーム主ボタンの期待動作も確認してください。
       renderShell(`
         <section class="calendar-shell">
           <button class="secondary-button" type="button" data-action="go" data-view="home">戻る</button>
@@ -2335,6 +2511,7 @@
     }
 
     async function moveCard(direction) {
+      // カード遷移中の連打を state.transitioning で止めます。アニメーション時間は .deck-card.is-exiting と合わせて調整してください。
       if (state.transitioning) return;
       const deck = getDeck();
       const nextIndex = state.activeIndex + direction;
@@ -2349,6 +2526,7 @@
     }
 
     async function confirmCard() {
+      // 最後のカード確認時だけ履歴を追加し完了画面へ遷移します。途中カードでは保存しないため、中断は履歴に残りません。
       if (state.transitioning) return;
       const deck = getDeck();
       const card = deck[state.activeIndex];
@@ -2373,6 +2551,7 @@
     }
 
     function startRun() {
+      // 新しい実行を始める入口です。前回の一時状態を消してから deck を表示します。
       state.activeIndex = 0;
       state.confirmedCards = [];
       state.view = "deck";
@@ -2380,6 +2559,7 @@
     }
 
     function showModal(title, message, actions = [{ label: "OK", value: "ok", style: "primary-button" }]) {
+      // 汎用確認モーダルです。クリックイベントは Promise 解決時に必ず外し、modalRoot を空にする前提で他のモーダルと共有しています。
       modalRoot.innerHTML = `
         <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
           <h2 id="modalTitle">${escapeHTML(title)}</h2>
@@ -2409,6 +2589,7 @@
     }
 
     function showCheatDayAnnouncement() {
+      // 完了画面の特別メッセージ後、当日が解禁日の場合だけ出す案内です。虫眼鏡ボタンは CHEAT_DAY_URL を別タブで開きます。
       modalRoot.innerHTML = `
         <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
           <h2 id="modalTitle">本日、禁欲解禁日です。</h2>
@@ -2441,6 +2622,7 @@
     }
 
     async function showTypewriterModal(title, text, buttonLabel = "閉じる") {
+      // 長文を 1 文字ずつ表示する専用モーダルです。許可している装飾は <u>...</u> の下線だけで、通常の HTML 挿入ではありません。
       modalRoot.innerHTML = `
         <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
           <h2 id="modalTitle">${escapeHTML(title)}</h2>
@@ -2458,7 +2640,7 @@
       const handleSkip = () => { isSkipped = true; };
       modalRoot.addEventListener("click", handleSkip, { once: true });
 
-      // メッセージのパース（<u>タグを抽出）
+      // メッセージのパース（<u>タグを抽出）。閉じタグ欠落時も残りを下線扱いにして表示を止めないようにしています。
       const tokens = [];
       let tempText = text;
       while (tempText) {
@@ -2548,6 +2730,7 @@
     }
 
     app.addEventListener("submit", (event) => {
+      // フォーム送信はロック解除だけです。認証成功時のみ localStorage に保存し、失敗時は進捗を破棄します。
       const form = event.target.closest("form");
       if (!form) return;
       event.preventDefault();
@@ -2581,6 +2764,7 @@
     modalRoot.addEventListener("pointerdown", handlePointerFeedback);
 
     app.addEventListener("click", async (event) => {
+      // 全ボタン操作のルーティングです。data-action 名を変えるとテンプレート側のボタンが無反応になります。
       const actionTarget = event.target.closest("[data-action]");
       if (!actionTarget || actionTarget.disabled) return;
       const action = actionTarget.dataset.action;
@@ -2637,6 +2821,7 @@
       }
 
       if (action === "lock-reset") {
+        // 認証リセットは authenticated キーだけを消します。履歴・カード・画像選択は削除対象ではありません。
         const result = await showModal("認証状態をリセットしますか", "次回からもう一度パスワード入力が必要になります。", [
           { label: "やめる", value: "cancel", style: "secondary-button" },
           { label: "リセット", value: "reset", style: "danger-button" }
@@ -2651,6 +2836,7 @@
       }
     });
 
+    // 初期描画。以後の画面切り替えも render() 経由に統一します。
     render();
   </script>
 </body>
