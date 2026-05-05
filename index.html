@@ -353,6 +353,17 @@
       color: var(--ink);
     }
 
+    .settings-action-button {
+      border-color: rgba(var(--theme-rgb), 0.18);
+      background: linear-gradient(135deg, var(--gold-soft), #f3cf7a);
+      color: #6c4a00;
+      box-shadow: 0 12px 24px rgba(169, 123, 0, 0.14);
+    }
+
+    .settings-action-button:hover {
+      box-shadow: 0 15px 30px rgba(169, 123, 0, 0.20);
+    }
+
     .quiet-button {
       background: transparent;
       color: var(--teal-dark);
@@ -1504,7 +1515,7 @@
     const CHEAT_DAY_URL = "https://www.notion.so/35287ce6d69280f5b9def969f515f810?source=copy_link";
     const BGM_VIDEO_URL = "https://www.icloud.com/sharedalbum/#B235nhQSTidALJe";
     const CHEAT_DAY_ORIGIN_KEY = "2026-04-30";
-    const CHEAT_DAY_INTERVAL_DAYS = 7;
+    const CHEAT_DAY_INTERVAL_DAYS = 5;
 
     // 保存キーは既存データの契約です。名称変更は履歴・認証・画像選択を失うため、必ず移行を追加してください。
     const STORAGE_KEYS = {
@@ -1979,7 +1990,7 @@
     }
 
     function isCheatDay(dateKey = todayKey()) {
-      // 解禁日は CHEAT_DAY_ORIGIN_KEY から 7 日ごとのローカル日付で判定します。時刻や UTC では判定しません。
+      // 解禁日は CHEAT_DAY_ORIGIN_KEY から 5 日ごとのローカル日付で判定します。時刻や UTC では判定しません。
       const daysFromOrigin = daysBetweenKeys(CHEAT_DAY_ORIGIN_KEY, dateKey);
       return daysFromOrigin >= CHEAT_DAY_INTERVAL_DAYS && daysFromOrigin % CHEAT_DAY_INTERVAL_DAYS === 0;
     }
@@ -2411,8 +2422,8 @@
           <div class="stack">
             <p class="section-copy">スタンプ履歴（実施日時）をテキスト形式で書き出し、クリップボードにコピーします。</p>
             <button class="primary-button" type="button" data-action="backup-data">履歴をテキストで保存</button>
-            <button class="secondary-button" type="button" data-action="repair-yesterday">前日の記入漏れ修正</button>
-            <button class="secondary-button" type="button" data-action="open-bgm-video-url">BGMの動画を再生</button>
+            <button class="secondary-button settings-action-button" type="button" data-action="repair-yesterday">前日の記入漏れ修正</button>
+            <button class="secondary-button settings-action-button" type="button" data-action="open-bgm-video-url">BGMの動画を再生</button>
             <hr style="border: 0; border-top: 1px solid var(--line); margin: 15px 0;">
             <button class="secondary-button" type="button" data-action="go" data-view="home">戻る</button>
           </div>
