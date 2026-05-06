@@ -1629,6 +1629,16 @@
         shape: "wide",
         title: "自分を病気だと自覚しろ。",
         message: DEATH_PENALTY_MESSAGE
+      },
+      {
+        id: "warning-2026-05-07",
+        dateKey: "2026-05-07",
+        label: "自慰",
+        metaLabel: "1回",
+        mark: "×",
+        tone: "warning",
+        title: "2026年5月7日。失敗。自慰1回。",
+        resetsCheatDay: true
       }
     ];
 
@@ -1639,7 +1649,13 @@
       { dateKey: "2026-04-21", title: "2026年4月21日。既定スタンプ" },
       { dateKey: "2026-04-24", title: "2026年4月24日。既定スタンプ" },
       { dateKey: "2026-04-25", title: "2026年4月25日。既定スタンプ" },
-      { dateKey: "2026-04-28", title: "2026年4月28日。既定スタンプ" }
+      { dateKey: "2026-04-28", title: "2026年4月28日。既定スタンプ" },
+      { dateKey: "2026-05-01", title: "2026年5月1日。既定スタンプ" },
+      { dateKey: "2026-05-02", title: "2026年5月2日。既定スタンプ" },
+      { dateKey: "2026-05-03", title: "2026年5月3日。既定スタンプ" },
+      { dateKey: "2026-05-04", title: "2026年5月4日。既定スタンプ" },
+      { dateKey: "2026-05-05", title: "2026年5月5日。既定スタンプ・解禁日" },
+      { dateKey: "2026-05-06", title: "2026年5月6日。既定スタンプ" }
     ];
 
     // 写真ファイル名は manifest ではなく画面表示側の依存です。追加・削除時は getInitialImageIndex() の範囲チェックも確認してください。
@@ -1989,21 +2005,37 @@
       return new Set(specialStamps.flatMap((stamp) => stamp.dateKeys || [stamp.dateKey]));
     }
 
+    function getCheatDayOriginKey(dateKey) {
+      return specialStamps.reduce((originKey, stamp) => {
+        if (!stamp.resetsCheatDay) return originKey;
+        const resetKeys = stamp.dateKeys || [stamp.dateKey];
+        return resetKeys.reduce((currentOrigin, resetKey) => {
+          if (!resetKey || daysBetweenKeys(resetKey, dateKey) < 0) return currentOrigin;
+          return daysBetweenKeys(currentOrigin, resetKey) > 0 ? resetKey : currentOrigin;
+        }, originKey);
+      }, CHEAT_DAY_ORIGIN_KEY);
+    }
+
     function isCheatDay(dateKey = todayKey()) {
-      // 解禁日は CHEAT_DAY_ORIGIN_KEY から 5 日ごとのローカル日付で判定します。時刻や UTC では判定しません。
-      const daysFromOrigin = daysBetweenKeys(CHEAT_DAY_ORIGIN_KEY, dateKey);
+      // 解禁日は基準日から 5 日ごとです。失敗スタンプが resetsCheatDay を持つ場合は、その日を起点に再計算します。
+      const originKey = getCheatDayOriginKey(dateKey);
+      const daysFromOrigin = daysBetweenKeys(originKey, dateKey);
       return daysFromOrigin >= CHEAT_DAY_INTERVAL_DAYS && daysFromOrigin % CHEAT_DAY_INTERVAL_DAYS === 0;
     }
 
     function getCheatDayStamps(history = getDailyHistory()) {
-      const cheatKeys = [...new Set(history.map(getRecordDateKey))]
+      const sourceKeys = [
+        ...history.map(getRecordDateKey),
+        ...defaultRegularStamps.map((stamp) => stamp.dateKey)
+      ];
+      const cheatKeys = [...new Set(sourceKeys)]
         .filter((dateKey) => dateKey && isCheatDay(dateKey));
 
       return cheatKeys.map((currentKey) => ({
         kind: "cheat",
         dateKey: currentKey,
-        mark: "∞",
-        label: "チートDay",
+        mark: "○",
+        label: "チートDAY",
         title: "本日、禁欲解禁日です。"
       }));
     }
@@ -2032,15 +2064,19 @@
           const dateKey = getRecordDateKey(item);
           return !specialKeys.has(dateKey) && !isCheatDay(dateKey);
         })
-        .map((item) => ({
-          kind: item.correctionMark ? "correction" : "regular",
-          dateKey: getRecordDateKey(item),
-          completedAt: item.completedAt,
-          mark: item.correctionMark || "",
-          label: item.correctionLabel || "",
-          tone: item.correctionTone || "",
-          title: item.correctionLabel ? `${item.dateKey} ${item.correctionLabel}` : formatDate(item.completedAt)
-        }));
+        .map((item) => {
+          const isCorrection = Boolean(item.correctionMark || item.correctionLabel);
+          const correctionLabel = isCorrection ? "修正記入" : "";
+          return {
+            kind: isCorrection ? "correction" : "regular",
+            dateKey: getRecordDateKey(item),
+            completedAt: item.completedAt,
+            mark: "",
+            label: correctionLabel,
+            tone: item.correctionTone || "",
+            title: isCorrection ? `${item.dateKey} ${correctionLabel || item.correctionLabel || "前日修正"}` : formatDate(item.completedAt)
+          };
+        });
 
       const defaultItems = defaultRegularStamps
         .filter((stamp) => !historyKeys.has(stamp.dateKey) && !specialKeys.has(stamp.dateKey) && !isCheatDay(stamp.dateKey))
@@ -2288,7 +2324,7 @@
         const memoClass = item.memoTone ? ` is-${escapeHTML(item.memoTone)}` : "";
         const warningContent = `<span class="stamp-mark">${escapeHTML(item.mark)}</span><span class="stamp-label-line"><span class="stamp-label">${escapeHTML(item.label)}</span>${item.metaLabel ? `<span class="stamp-label-meta">${escapeHTML(item.metaLabel)}</span>` : ""}</span><span class="stamp-sub-label${subLabelClass}"${item.subLabel ? "" : ' aria-hidden="true"'}>${escapeHTML(item.subLabel || "")}</span>${item.memo ? `<span class="stamp-note${memoClass}">${escapeHTML(item.memo)}</span>` : ""}`;
         const cheatContent = `<span class="stamp-cheat-mark">${escapeHTML(item.mark)}</span><span class="stamp-cheat-label">${escapeHTML(item.label)}</span>`;
-        const correctionContent = `<span class="stamp-mark">${escapeHTML(item.mark)}</span><span class="stamp-label">${escapeHTML(item.label)}</span>`;
+        const correctionContent = `${item.mark ? `<span class="stamp-mark">${escapeHTML(item.mark)}</span>` : ""}<span class="stamp-label">${escapeHTML(item.label)}</span>`;
         return `
           <div class="stamp${isCurrent ? " is-current" : ""}${toneClass}${shapeClass}${clickableClass}" title="${escapeHTML(item.title)}"${actionAttr}>
             <span class="stamp-inner ${isCheat ? "is-cheat" : isWarning ? "is-warning" : "is-regular"}">
@@ -2691,7 +2727,7 @@
       if (hasAnyStampForDate(dateKey)) return false;
 
       const isCross = value === "cross";
-      const label = isCross ? "バツ" : "丸";
+      const label = isCross ? "バツ" : "修正記入";
       const completedAtDate = dateKeyToDate(dateKey);
       completedAtDate.setHours(12, 0, 0, 0);
       const history = getHistory();
