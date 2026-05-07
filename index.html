@@ -2066,15 +2066,16 @@
         })
         .map((item) => {
           const isCorrection = Boolean(item.correctionMark || item.correctionLabel);
-          const correctionLabel = isCorrection ? "修正記入" : "";
+          const correctionLabel = item.correctionLabel || (isCorrection ? "修正記入" : "");
           return {
+            id: item.id,
             kind: isCorrection ? "correction" : "regular",
             dateKey: getRecordDateKey(item),
             completedAt: item.completedAt,
-            mark: "",
+            mark: item.correctionMark || "",
             label: correctionLabel,
             tone: item.correctionTone || "",
-            title: isCorrection ? `${item.dateKey} ${correctionLabel || item.correctionLabel || "前日修正"}` : formatDate(item.completedAt)
+            title: isCorrection ? `${item.dateKey} ${correctionLabel || "前日修正"}` : formatDate(item.completedAt)
           };
         });
 
@@ -2314,8 +2315,9 @@
         const isCurrent = !isWarning && !isCheat && !isDefault && !isCrossCorrection && streakKeys.has(item.dateKey);
         const toneClass = isWarning ? ` is-${item.tone || "warning"}` : isCheat ? " is-cheat" : isCorrection && item.tone ? ` is-${escapeHTML(item.tone)}` : "";
         const shapeClass = item.shape ? ` is-${escapeHTML(item.shape)}` : "";
-        const clickableClass = (isWarning && item.message) ? " is-clickable" : "";
-        const actionAttr = clickableClass ? ` data-action="show-special-message" data-id="${escapeHTML(item.id || item.dateKey)}"` : "";
+        const isEditable = !isWarning && !isCheat && !isDefault && !isCrossCorrection;
+        const clickableClass = (isWarning && item.message) ? " is-clickable" : isEditable ? " is-editable-stamp" : "";
+        const actionAttr = (isWarning && item.message) ? ` data-action="show-special-message" data-id="${escapeHTML(item.id || item.dateKey)}"` : isEditable ? ` data-editable-id="${escapeHTML(item.id || '')}"` : "";
         const dateParts = usesDateKey ? formatStampDateKey(item.dateKey) : formatStampDate(item.completedAt);
         const dateLabel = item.dateLabel || dateParts.date;
         const subLabelClass = item.subLabel
@@ -2905,6 +2907,83 @@
 
     app.addEventListener("pointerdown", handlePointerFeedback);
     modalRoot.addEventListener("pointerdown", handlePointerFeedback);
+
+
+    let longPressTimer = null;
+    let longPressTarget = null;
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+
+    function getCoords(e) {
+      if (e.touches && e.touches.length > 0) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function onPointerDown(e) {
+      if (e.button && e.button !== 0) return;
+      const target = e.target.closest('[data-editable-id]');
+      if (!target) return;
+      
+      const coords = getCoords(e);
+      pointerStartX = coords.x;
+      pointerStartY = coords.y;
+      longPressTarget = target;
+      
+      longPressTimer = window.setTimeout(() => {
+        handleLongPress(target);
+        cancelLongPress();
+      }, 700);
+    }
+
+    function onPointerMove(e) {
+      if (!longPressTimer) return;
+      const coords = getCoords(e);
+      if (Math.abs(coords.x - pointerStartX) > 10 || Math.abs(coords.y - pointerStartY) > 10) {
+        cancelLongPress();
+      }
+    }
+
+    function cancelLongPress() {
+      if (longPressTimer) {
+        window.clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+      longPressTarget = null;
+    }
+
+    function handleLongPress(target) {
+      const id = target.getAttribute('data-editable-id');
+      if (!id) return;
+      
+      setTimeout(() => {
+        if (window.confirm("バツに変更しますか？")) {
+          setTimeout(() => {
+            const count = window.prompt("何回でしたか？", "1");
+            if (count !== null && count.trim() !== "") {
+              const history = getHistory();
+              const index = history.findIndex(item => item.id === id);
+              if (index !== -1) {
+                history[index].correctionMark = "×";
+                history[index].correctionLabel = `自慰${count.trim()}回`;
+                history[index].correctionTone = "warning";
+                saveJSON(STORAGE_KEYS.history, history.slice(0, 180));
+                render();
+              }
+            }
+          }, 10);
+        }
+      }, 10);
+    }
+
+    app.addEventListener("touchstart", onPointerDown, { passive: true });
+    app.addEventListener("touchmove", onPointerMove, { passive: true });
+    app.addEventListener("touchend", cancelLongPress, { passive: true });
+    app.addEventListener("touchcancel", cancelLongPress, { passive: true });
+    app.addEventListener("mousedown", onPointerDown, { passive: true });
+    app.addEventListener("mousemove", onPointerMove, { passive: true });
+    app.addEventListener("mouseup", cancelLongPress, { passive: true });
 
     app.addEventListener("click", async (event) => {
       // 全ボタン操作のルーティングです。data-action 名を変えるとテンプレート側のボタンが無反応になります。
