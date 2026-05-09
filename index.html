@@ -2724,12 +2724,12 @@
       });
     }
 
-    function addYesterdayCorrection(value) {
+    function addYesterdayCorrection(value, countStr) {
       const dateKey = addDaysToKey(todayKey(), -1);
       if (hasAnyStampForDate(dateKey)) return false;
 
       const isCross = value === "cross";
-      const label = isCross ? "バツ" : "修正記入";
+      const label = isCross ? `自慰${countStr || "1"}回` : "修正記入";
       const completedAtDate = dateKeyToDate(dateKey);
       completedAtDate.setHours(12, 0, 0, 0);
       const history = getHistory();
@@ -2760,9 +2760,21 @@
       ]);
 
       if (result !== "circle" && result !== "cross") return;
-      if (addYesterdayCorrection(result)) {
-        await showModal("記録しました", "前日分の記録を追加しました。");
-        render();
+
+      if (result === "cross") {
+        setTimeout(() => {
+          const count = window.prompt("何回でしたか？", "1");
+          if (count !== null && count.trim() !== "") {
+            if (addYesterdayCorrection(result, count.trim())) {
+              showModal("記録しました", "前日分の記録を追加しました。").then(render);
+            }
+          }
+        }, 10);
+      } else {
+        if (addYesterdayCorrection(result)) {
+          await showModal("記録しました", "前日分の記録を追加しました。");
+          render();
+        }
       }
     }
 
