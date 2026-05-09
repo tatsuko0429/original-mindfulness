@@ -2066,7 +2066,14 @@
         })
         .map((item) => {
           const isCorrection = Boolean(item.correctionMark || item.correctionLabel);
-          const correctionLabel = item.correctionLabel || (isCorrection ? "修正記入" : "");
+          let correctionLabel = item.correctionLabel || (isCorrection ? "修正記入" : "");
+          let metaLabel = "";
+          
+          if (isCorrection && item.correctionMark === "×" && correctionLabel.startsWith("自慰") && correctionLabel.endsWith("回")) {
+            correctionLabel = "自慰";
+            metaLabel = item.correctionLabel.substring(2);
+          }
+
           return {
             id: item.id,
             kind: isCorrection ? "correction" : "regular",
@@ -2074,8 +2081,11 @@
             completedAt: item.completedAt,
             mark: item.correctionMark || "",
             label: correctionLabel,
+            metaLabel: metaLabel,
+            subLabel: "",
+            subTone: "",
             tone: item.correctionTone || "",
-            title: isCorrection ? `${item.dateKey} ${correctionLabel || "前日修正"}` : formatDate(item.completedAt)
+            title: isCorrection ? `${item.dateKey} ${item.correctionLabel || "前日修正"}` : formatDate(item.completedAt)
           };
         });
 
@@ -2329,10 +2339,10 @@
         const correctionContent = `${item.mark ? `<span class="stamp-mark">${escapeHTML(item.mark)}</span>` : ""}<span class="stamp-label">${escapeHTML(item.label)}</span>`;
         return `
           <div class="stamp${isCurrent ? " is-current" : ""}${toneClass}${shapeClass}${clickableClass}" title="${escapeHTML(item.title)}"${actionAttr}>
-            <span class="stamp-inner ${isCheat ? "is-cheat" : isWarning ? "is-warning" : "is-regular"}">
+            <span class="stamp-inner ${isCheat ? "is-cheat" : (isWarning || isCrossCorrection) ? "is-warning" : "is-regular"}">
               <span class="stamp-year">${escapeHTML(dateParts.year)}</span>
               <span class="stamp-date">${escapeHTML(dateLabel)}</span>
-              ${isCheat ? cheatContent : isWarning ? warningContent : isCorrection ? correctionContent : isDefault ? "" : `<span class="stamp-time">${escapeHTML(formatStampTime(item.completedAt))}</span>`}
+              ${isCheat ? cheatContent : (isWarning || isCrossCorrection) ? warningContent : isCorrection ? correctionContent : isDefault ? "" : `<span class="stamp-time">${escapeHTML(formatStampTime(item.completedAt))}</span>`}
             </span>
           </div>
         `;
