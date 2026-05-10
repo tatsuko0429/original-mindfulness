@@ -2326,8 +2326,8 @@
         const toneClass = isWarning ? ` is-${item.tone || "warning"}` : isCheat ? " is-cheat" : isCorrection && item.tone ? ` is-${escapeHTML(item.tone)}` : "";
         const shapeClass = item.shape ? ` is-${escapeHTML(item.shape)}` : "";
         const isEditable = !isWarning && !isCheat && !isDefault && !isCrossCorrection;
-        const clickableClass = (isWarning && item.message) ? " is-clickable" : isEditable ? " is-editable-stamp" : "";
-        const actionAttr = (isWarning && item.message) ? ` data-action="show-special-message" data-id="${escapeHTML(item.id || item.dateKey)}"` : isEditable ? ` data-editable-id="${escapeHTML(item.id || '')}"` : "";
+        const clickableClass = (isWarning && item.message) ? " is-clickable" : isEditable ? " is-editable-stamp" : isCrossCorrection ? " is-editable-stamp" : "";
+        const actionAttr = (isWarning && item.message) ? ` data-action="show-special-message" data-id="${escapeHTML(item.id || item.dateKey)}"` : (isEditable || isCrossCorrection) ? ` data-editable-id="${escapeHTML(item.id || '')}"` : "";
         const dateParts = usesDateKey ? formatStampDateKey(item.dateKey) : formatStampDate(item.completedAt);
         const dateLabel = item.dateLabel || dateParts.date;
         const subLabelClass = item.subLabel
@@ -2978,25 +2978,46 @@
     function handleLongPress(target) {
       const id = target.getAttribute('data-editable-id');
       if (!id) return;
-      
-      setTimeout(() => {
-        if (window.confirm("バツに変更しますか？")) {
-          setTimeout(() => {
-            const count = window.prompt("何回でしたか？", "1");
-            if (count !== null && count.trim() !== "") {
-              const history = getHistory();
-              const index = history.findIndex(item => item.id === id);
-              if (index !== -1) {
+
+      const history = getHistory();
+      const index = history.findIndex(item => item.id === id);
+      if (index === -1) return;
+
+      const record = history[index];
+      const isCrossRecord = record.correctionMark === "×";
+
+      if (isCrossRecord) {
+        // バツ記録 → 回数のみ再編集
+        setTimeout(() => {
+          if (window.confirm("回数を変更しますか？")) {
+            setTimeout(() => {
+              const currentCount = (record.correctionLabel || "").replace(/^自慰/, "").replace(/回$/, "") || "1";
+              const count = window.prompt("何回でしたか？", currentCount);
+              if (count !== null && count.trim() !== "") {
+                history[index].correctionLabel = `自慰${count.trim()}回`;
+                saveJSON(STORAGE_KEYS.history, history.slice(0, 180));
+                render();
+              }
+            }, 10);
+          }
+        }, 10);
+      } else {
+        // 丸スタンプ → バツへ変更（既存の流れ）
+        setTimeout(() => {
+          if (window.confirm("バツに変更しますか？")) {
+            setTimeout(() => {
+              const count = window.prompt("何回でしたか？", "1");
+              if (count !== null && count.trim() !== "") {
                 history[index].correctionMark = "×";
                 history[index].correctionLabel = `自慰${count.trim()}回`;
                 history[index].correctionTone = "warning";
                 saveJSON(STORAGE_KEYS.history, history.slice(0, 180));
                 render();
               }
-            }
-          }, 10);
-        }
-      }, 10);
+            }, 10);
+          }
+        }, 10);
+      }
     }
 
     app.addEventListener("touchstart", onPointerDown, { passive: true });
