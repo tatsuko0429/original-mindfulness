@@ -1514,7 +1514,6 @@
     const CALENDAR_URL = "https://tatsuko0429.github.io/yome-senyo-tool/";
     const CHEAT_DAY_URL = "https://www.notion.so/35287ce6d69280f5b9def969f515f810?source=copy_link";
     const BGM_VIDEO_URL = "https://www.icloud.com/sharedalbum/#B235nhQSTidALJe";
-    const CHEAT_DAY_ORIGIN_KEY = "2026-04-30";
     const CHEAT_DAY_INTERVAL_DAYS = 5;
 
     // 保存キーは既存データの契約です。名称変更は履歴・認証・画像選択を失うため、必ず移行を追加してください。
@@ -2005,22 +2004,59 @@
       return new Set(specialStamps.flatMap((stamp) => stamp.dateKeys || [stamp.dateKey]));
     }
 
-    function getCheatDayOriginKey(dateKey) {
-      return specialStamps.reduce((originKey, stamp) => {
-        if (!stamp.resetsCheatDay) return originKey;
-        const resetKeys = stamp.dateKeys || [stamp.dateKey];
-        return resetKeys.reduce((currentOrigin, resetKey) => {
-          if (!resetKey || daysBetweenKeys(resetKey, dateKey) < 0) return currentOrigin;
-          return daysBetweenKeys(currentOrigin, resetKey) > 0 ? resetKey : currentOrigin;
-        }, originKey);
-      }, CHEAT_DAY_ORIGIN_KEY);
+    function getDailyStampOutcomes() {
+      const outcomes = new Map();
+
+      defaultRegularStamps.forEach((stamp) => {
+        if (stamp.dateKey) outcomes.set(stamp.dateKey, "success");
+      });
+
+      getDailyHistory().forEach((record) => {
+        const dateKey = getRecordDateKey(record);
+        if (!dateKey) return;
+        outcomes.set(dateKey, isCompletionHistoryRecord(record) ? "success" : "failure");
+      });
+
+      specialStamps.forEach((stamp) => {
+        (stamp.dateKeys || [stamp.dateKey]).forEach((dateKey) => {
+          if (dateKey) outcomes.set(dateKey, "failure");
+        });
+      });
+
+      return outcomes;
+    }
+
+    function getSuccessStreakForDate(dateKey) {
+      // 解禁日はカレンダー周期ではなく、○スタンプが日付連続で積み上がった数から判定します。
+      const outcomes = getDailyStampOutcomes();
+      let streak = 0;
+      let previousKey = "";
+      let targetStreak = 0;
+
+      [...outcomes.keys()]
+        .filter((key) => key && key <= dateKey)
+        .sort()
+        .forEach((key) => {
+          const outcome = outcomes.get(key);
+          if (outcome !== "success") {
+            previousKey = key;
+            streak = 0;
+            return;
+          }
+
+          streak = previousKey && daysBetweenKeys(previousKey, key) === 1
+            ? streak + 1
+            : 1;
+          previousKey = key;
+          if (key === dateKey) targetStreak = streak;
+        });
+
+      return targetStreak;
     }
 
     function isCheatDay(dateKey = todayKey()) {
-      // 解禁日は基準日から 5 日ごとです。失敗スタンプが resetsCheatDay を持つ場合は、その日を起点に再計算します。
-      const originKey = getCheatDayOriginKey(dateKey);
-      const daysFromOrigin = daysBetweenKeys(originKey, dateKey);
-      return daysFromOrigin >= CHEAT_DAY_INTERVAL_DAYS && daysFromOrigin % CHEAT_DAY_INTERVAL_DAYS === 0;
+      const successStreak = getSuccessStreakForDate(dateKey);
+      return successStreak >= CHEAT_DAY_INTERVAL_DAYS && successStreak % CHEAT_DAY_INTERVAL_DAYS === 0;
     }
 
     function getCheatDayStamps(history = getDailyHistory()) {
@@ -2667,7 +2703,7 @@
           await showCheatDayAnnouncement();
         }
       }
-      state.view = "home";
+      state.view = "calendar";
       render();
     }
 
@@ -3042,9 +3078,10 @@
       }
 
       if (action === "expand-stamp-month") {
-        const monthKey = actionTarget.dataset.month;
+        const monthKey = actionTarget.dataset.month || actionTarget.getAttribute("data-month");
         if (monthKey) state.expandedStampMonths.add(monthKey);
         render();
+        return;
       }
 
       if (action === "toggle-image") {
