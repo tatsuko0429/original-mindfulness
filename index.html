@@ -303,6 +303,49 @@
       text-align: center;
     }
 
+    .stamp-total {
+      width: fit-content;
+      max-width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      margin: -2px auto 2px;
+      padding: 8px 12px;
+      border: 1px solid rgba(217, 81, 78, 0.20);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(135deg, rgba(255, 240, 238, 0.92), rgba(255, 255, 255, 0.80)),
+        var(--paper);
+      color: var(--ink);
+      box-shadow: 0 10px 24px rgba(185, 60, 58, 0.10);
+    }
+
+    .stamp-total-label {
+      color: var(--coral-dark);
+      font-size: 0.78rem;
+      font-weight: 900;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .stamp-total-count {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 3px;
+      color: var(--ink);
+      font-size: 1.34rem;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .stamp-total-unit {
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 900;
+    }
+
     .section-copy {
       margin: 0;
       color: var(--muted);
@@ -2090,6 +2133,32 @@
       });
     }
 
+    function normalizeCountText(value) {
+      return String(value || "").replace(/[０-９]/g, (char) => {
+        return String.fromCharCode(char.charCodeAt(0) - 0xFEE0);
+      });
+    }
+
+    function getExplicitStampCount(...values) {
+      const source = normalizeCountText(values.filter(Boolean).join(" "));
+      const match = source.match(/(\d+)\s*回/);
+      if (!match) return null;
+      const count = Number(match[1]);
+      return Number.isFinite(count) && count > 0 ? count : null;
+    }
+
+    function getCrossStampCount(item) {
+      const mark = String(item?.mark || "");
+      if (!mark.includes("×") && !mark.includes("✕")) return 0;
+      return getExplicitStampCount(item.metaLabel, item.subLabel, item.label, item.title) || 1;
+    }
+
+    function calculateCrossStampTotal() {
+      return getVisibleStampHistory().reduce((total, item) => {
+        return total + getCrossStampCount(item);
+      }, 0);
+    }
+
     function getVisibleStampHistory() {
       // 表示用スタンプの合成点です。履歴・既定・特別・解禁日の追加条件や並び順を変える場合はここを中心に確認してください。
       const specialKeys = getSpecialStampKeys();
@@ -2559,6 +2628,7 @@
       // 初期表示です。当日完了済みなら再実行ではなくカレンダー導線へ変える仕様を維持してください。
       const todayLabel = formatDate(new Date().toISOString(), "date");
       const completedToday = hasCompletedMindsetToday();
+      const crossStampTotal = calculateCrossStampTotal();
       const primaryAction = completedToday
         ? { action: "open-calendar", label: "カレンダーを開く" }
         : { action: "start-run", label: "マインドセット" };
@@ -2575,6 +2645,10 @@
         </section>
         <section class="section">
           <h2 class="section-title">最近の記録</h2>
+          <div class="stamp-total" aria-label="バツスタンプ累計 ${crossStampTotal}回">
+            <span class="stamp-total-label">×累計</span>
+            <span class="stamp-total-count">${crossStampTotal}<span class="stamp-total-unit">回</span></span>
+          </div>
           ${renderStampHistory()}
         </section>
       `);
