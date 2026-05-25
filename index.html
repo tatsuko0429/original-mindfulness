@@ -2163,19 +2163,21 @@
     }
 
     function hasCompletedMindsetToday() {
-      // ホームの主ボタンを「マインドセット」から「カレンダーを開く」へ切り替える判定です。日付境界は todayKey() に依存します。
+      // ホームの主ボタンを「マインドセット」から「カレンダーを開く」へ切り替える判定です。失敗記録と同日完了が混在しても完了済みとして扱います。
       const key = todayKey();
-      return getDailyHistory().some((item) => {
+      return getHistory().some((item) => {
         return getRecordDateKey(item) === key && isCompletionHistoryRecord(item);
       });
     }
 
     function addHistory(cards) {
-      // 1 日 1 件だけ保存する不変条件です。完了画面に進んでも同日二重実行では履歴を増やしません。
+      // 完了記録は 1 日 1 件だけ保存します。失敗記録だけがある日は、完了後のホーム導線のために完了記録を追加します。
       const history = getHistory();
       const key = todayKey();
-      const alreadyRecorded = history.some((item) => getRecordDateKey(item) === key);
-      if (alreadyRecorded) return;
+      const alreadyCompleted = history.some((item) => {
+        return getRecordDateKey(item) === key && isCompletionHistoryRecord(item);
+      });
+      if (alreadyCompleted) return;
 
       history.unshift({
         id: `${Date.now()}-mindset`,
